@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Climb to Jannah</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    /* Your existing CSS styles here */
+    /* Add these new styles for auth UI */
+    /* --- Base & Theme Colors --- */
+    :root {
+      --bg-primary: #e6f5f1;
+      /* Soft greenish background */
+      --bg-secondary: #ffffff;
+      /* White for cards/content */
+      --accent-green: #0f6d5b;
+      /* Main spiritual green */
+      --accent-red: #ef466f;
+      /* For bad deeds */
+      --accent-yellow: #f59e0b;
+      /* Highlight / stars */
+      --text-primary: #0f172a;
+      /* Dark text */
+      --text-muted: #6b7280;
+      /* Grey text */
+      --border: rgba(15, 109, 91, 0.2);
+      --radius: 14px;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    
+    /* --- Global Styles --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-size: 16px;
+      transition: margin-left 0.3s ease;
+    }
+    
+    body.sidebar-open {
+      margin-left: 250px;
+    }
+    
+    /* --- Header & Nav --- */
+    header nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius);
+      position: relative;
+      z-index: 100;
+    }
+    
+    nav .left,
+    nav .right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    
+    nav button:hover {
+      background-color: rgba(15, 109, 91, 0.1);
+    }
+    
+    nav .title #title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--accent-green);
+    }
+    
+    nav .title #title em {
+      font-style: normal;
+      color: var(--accent-green);
+    }
+    
+    nav .title #sub-title {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Sidebar --- */
+    .sidebar-container {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 250px;
+      height: 100vh;
+      background: var(--bg-secondary);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: left 0.3s ease;
+      z-index: 99;
+      overflow-y: auto;
+    }
+    
+    .sidebar-container.open {
+      left: 0;
+    }
+    
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .sidebar-header img {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .sidebar-header h3 {
+      color: var(--accent-green);
+      font-size: 18px;
+    }
+    
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+    
+    .sidebar-menu ul {
+      list-style: none;
+    }
+    
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+    
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+    }
+    
+    .sidebar-menu a:hover {
+      background-color: rgba(15, 109, 91, 0.1);
+    }
+    
+    .sidebar-menu a.active {
+      background-color: rgba(15, 109, 91, 0.15);
+      border-right: 3px solid var(--accent-green);
+      color: var(--accent-green);
+    }
+    
+    .sidebar-menu i {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* --- Greeting Section --- */
+    header .greeting {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .greeting .first h1 {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    
+    .greeting .second {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Main --- */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      transition: margin-left 0.3s ease;
+    }
+    
+    /* --- Today's Summary Card --- */
+    .summary-card {
+      max-width: 400px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 22px rgba(12, 40, 32, 0.06);
+      padding: 24px;
+      margin: 20px auto;
+    }
+    
+    .summary-card .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    
+    .summary-card .star {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #FFEEC2;
+      display: inline-grid;
+      place-items: center;
+      color: var(--accent-yellow);
+    }
+    
+    .summary-card h2 {
+      font-size: 20px;
+      margin: 0;
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    
+    .summary-card .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      padding: 10px 4px 20px;
+    }
+    
+    .summary-card .stat {
+      background: #FFFFFF;
+      border-radius: 12px;
+      border: 1px solid #69FFDB;
+      padding: 14px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 90px;
+    }
+    
+    .summary-card .icon-bubble {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: inline-grid;
+      place-items: center;
+    }
+    
+    .summary-card .icon-good {
+      background: #CCFFEE;
+      color: var(--accent-green);
+    }
+    
+    .summary-card .icon-bad {
+      background: #FFC9D6;
+      color: var(--accent-red);
+    }
+    
+    .summary-card .icon-dist {
+      background: #BAFFBD;
+      color: #12B318;
+    }
+    
+    .summary-card .icon-star {
+      background: #FFE9BB;
+      color: var(--accent-yellow);
+    }
+    
+    .summary-card .stat .number {
+      font-weight: 700;
+      font-size: 28px;
+      color: var(--accent-green);
+    }
+    
+    .summary-card .stat .number.red {
+      color: var(--accent-red);
+    }
+    
+    .summary-card .stat .label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .summary-card .progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 1);
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #69FFDB;
+      margin-top: 14px;
+    }
+    
+    .summary-card .progress-row .left {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    
+    .summary-card .badge {
+      background: #fff6e6;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #FFBD46;
+      font-weight: 600;
+      color: #9a5a00;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    @media (max-width: 420px) {
+      .summary-card {
+        padding: 18px;
+      }
+      
+      .summary-card .stat .number {
+        font-size: 24px;
+      }
+    }
+    
+    /* --- Daily Motivation Card --- */
+    .motivation-card {
+      background: var(--bg-secondary);
+      max-width: 380px;
+      border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      padding: 20px 25px 30px 25px;
+      margin: 20px auto;
+      box-sizing: border-box;
+    }
+    
+    .motivation-card .header {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    
+    .motivation-card .header .icon {
+      color: var(--accent-yellow);
+    }
+    
+    .motivation-card .refresh-icon {
+      margin-left: auto;
+      cursor: pointer;
+      color: var(--accent-yellow);
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+    
+    .motivation-card .arabic {
+      font-family: "Segoe UI", "Noto Naskh Arabic", serif;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      direction: rtl;
+      font-weight: 600;
+      margin-bottom: 16px;
+      user-select: text;
+    }
+    
+    .motivation-card .quote-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 18px 28px 18px;
+      box-shadow: inset 0 -3px 0 0 var(--accent-yellow);
+      font-style: italic;
+      color: #222;
+      font-weight: 500;
+      font-size: 1rem;
+      line-height: 1.5;
+      user-select: text;
+    }
+    
+    .motivation-card .reference {
+      margin-top: 12px;
+      color: #c28724;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-top: 1px solid #ecd49b;
+      padding-top: 8px;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .motivation-card .reference svg {
+      fill: #c28724;
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* --- Astaghfirullah Button --- */
+    .astaghfirullah-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 30px 0;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .astaghfirullah-btn {
+      background: linear-gradient(135deg, #0f6d5b 0%, #0a8c6f 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(15, 109, 91, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .astaghfirullah-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(15, 109, 91, 0.4);
+    }
+    
+    .astaghfirullah-btn:active {
+      transform: translateY(0);
+    }
+    
+    .astaghfirullah-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .astaghfirullah-btn:hover::before {
+      left: 100%;
+    }
+    
+    .astaghfirullah-btn i {
+      font-size: 20px;
+    }
+    
+    .astaghfirullah-description {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 400px;
+    }
+    
+    
+    /* --- Footer --- */
+    .site-footer {
+      background: var(--bg-secondary);
+      text-align: center;
+      padding: 16px;
+      margin-top: 30px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Overlay for mobile --- */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 98;
+      display: none;
+    }
+    
+    .overlay.active {
+      display: block;
+    }
+    
+    /* --- Responsive Design --- */
+    @media (max-width: 768px) {
+      body.sidebar-open {
+        margin-left: 0;
+      }
+      
+      .sidebar-container {
+        width: 280px;
+      }
+    }
+    
+    /* Add these styles to your existing CSS */
+    
+    .login-btn {
+      background: linear-gradient(135deg, #0f6d5b 0%, #0a8c6f 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 109, 91, 0.3);
+    }
+    
+    .user-profile {
+      display: none;
+      align-items: center;
+      position: relative;
+    }
+    
+    .user-avatar-container {
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-green);
+      transition: all 0.3s ease;
+    }
+    
+    .user-avatar:hover {
+      border-color: var(--accent-yellow);
+      transform: scale(1.05);
+    }
+    
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      min-width: 250px;
+      z-index: 1000;
+      display: none;
+      margin-top: 10px;
+      animation: dropdownFade 0.2s ease;
+    }
+    
+    @keyframes dropdownFade {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .user-dropdown.show {
+      display: block;
+    }
+    
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .dropdown-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-green);
+    }
+    
+    .dropdown-user-info {
+      flex: 1;
+    }
+    
+    .dropdown-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .dropdown-email {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
+    }
+    
+    .dropdown-item {
+      width: 100%;
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+    
+    .dropdown-item:hover {
+      background: var(--bg-primary);
+      color: var(--accent-green);
+    }
+    
+    .dropdown-item i {
+      width: 16px;
+      text-align: center;
+    }
+    
+    .auth-message {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    .auth-message i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+      opacity: 0.7;
+    }
+    
+    .auth-message h2 {
+      margin-bottom: 15px;
+      color: var(--text-primary);
+    }
+    
+    /* Dropdown arrow */
+    .user-avatar-container::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      bottom: -5px;
+      width: 12px;
+      height: 12px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      border: 2px solid var(--bg-secondary);
+      display: none;
+    }
+    
+    .user-profile:hover .user-avatar-container::after {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Overlay for mobile sidebar -->
+  <div class="overlay" id="overlay"></div>
+  
+  <!-- Sidebar -->
+  <div class="sidebar-container" id="sidebar">
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Climb to Jannah Logo">
+      <h3>Climb to Jannah</h3>
+    </div>
+    <nav class="sidebar-menu">
+      <ul>
+        <li><a href="#" class="active"><i class="bi bi-house-door"></i> Dashboard</a></li>
+        <li><a href="/daily-goals.html" class="sidebar-link" data-page="daily-goals"><i class="bi bi-calendar-check"></i> Daily Goals</a></li>
+        <li><a href="/progress-tracking.html" class="sidebar-link" data-page="progress-tracking"><i class="bi bi-graph-up"></i> Progress Tracking</a></li>
+        <li><a href="/Deed-journal.html" class="sidebar-link" data-page="deed-journal"><i class="bi bi-journal-text"></i> Deed Journal</a></li>
+        <li><a href="/Help-&-Support.html"><i class="bi bi-question-circle"></i> Help & Support</a></li>
+      </ul>
+    </nav>
+  </div>
+  
+  <header>
+    <nav>
+      <div class="left">
+        <div class="sidebar">
+          <button id="sidebar-toggle" aria-label="Toggle Sidebar"><i class="bi bi-layout-sidebar"></i></button>
+        </div>
+        <div class="logo">
+          <img src="logo.png" alt="Climb to Jannah Logo" width="40">
+        </div>
+        <div class="title">
+          <div id="title">Climb to <em>Jannah</em></div>
+          <div id="sub-title">Climbing towards Jannah</div>
+        </div>
+      </div>
+      <div class="right">
+        <!-- Login Button -->
+        <button id="login-btn" class="login-btn">
+          <i class="bi bi-google"></i> Sign in
+        </button>
+        
+        <!-- User Profile with Dropdown -->
+        <div id="user-profile" class="user-profile">
+          <div class="user-avatar-container">
+            <img id="user-avatar" class="user-avatar" src="" alt="User Avatar">
+          </div>
+          <!-- Dropdown Menu -->
+          <div id="user-dropdown" class="user-dropdown">
+            <div class="dropdown-header">
+              <img id="dropdown-avatar" class="dropdown-avatar" src="" alt="User Avatar">
+              <div class="dropdown-user-info">
+                <div id="dropdown-name" class="dropdown-name"></div>
+                <div id="dropdown-email" class="dropdown-email"></div>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" onclick="signOutUser()">
+              <i class="bi bi-box-arrow-right"></i>
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="greeting">
+      <div class="first">
+        <h1>Welcome to Your Spiritual Journey</h1>
+      </div>
+      <div class="second">
+        Climbing towards Jannah, one good deed at a time
+      </div>
+    </div>
+  </header>
+  <main>
+    <!-- Content will be shown/hidden based on auth state -->
+    <div id="authenticated-content">
+      <!-- Today's Summary Card -->
+      <section class="summary-card" aria-labelledby="today-title">
+        <div class="title-row">
+          <div class="star" aria-hidden="true">⭐</div>
+          <h2 id="today-title">Today's Summary</h2>
+        </div>
+        
+        <div class="grid" role="list">
+          <div class="stat" role="listitem" aria-label="Good Deeds">
+            <div class="icon-bubble icon-good icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.9" />
+                <path d="M8.5 12.5l2 2 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="number">0</div>
+            <div class="label">Good Deeds</div>
+          </div>
+          
+          <div class="stat" role="listitem" aria-label="Bad Deeds">
+            <div class="icon-bubble icon-bad icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.9" />
+                <path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="number red">0</div>
+            <div class="label">Bad Deeds Done</div>
+          </div>
+          
+          <div class="stat" role="listitem" aria-label="Net Distance">
+            <div class="icon-bubble icon-dist icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 17l6-6 4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="number">0m</div>
+            <div class="label">Net Distance</div>
+          </div>
+          
+          <div class="stat" role="listitem" aria-label="Day Streak">
+            <div class="icon-bubble icon-star icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3.2l2.2 4.46L19.8 9l-3.6 3.2L16.6 18 12 15.2 7.4 18l.4-5.8L4.2 9l5.6-1.34L12 3.2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="number" style="color:#9a5a00">0</div>
+            <div class="label">Day Streak</div>
+          </div>
+        </div>
+        
+        <div class="progress-row" role="region" aria-label="Today's Progress">
+          <div class="left">Today's Progress</div>
+          <div class="badge">Steady 📍</div>
+        </div>
+      </section>
+      
+      <!-- Motivation Section -->
+      <section class="motivation-card">
+        <div class="header">
+          <span class="icon">✨</span>
+          <span>Daily Motivation</span>
+        </div>
+        <p class="arabic">
+          وَمَن يَعْمَلْ مِنَ الصَّالِحَاتِ مِن ذَكَرٍ أَوْ أُنثَىٰ وَهُوَ مُؤْمِنٌ
+          فَأُولَٰئِكَ يَدْخُلُونَ الْجَنَّةَ
+        </p>
+        <blockquote class="quote-box">
+          "And whoever does good deeds, whether male or female, while being a believer - those will enter Paradise"
+        </blockquote>
+        <div class="reference">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 4.5C8.96 4.5 6.5 6.96 6.5 10c0 5.25 5.5 9.5 5.5 9.5s5.5-4.25 5.5-9.5c0-3.04-2.46-5.5-5.5-5.5zm0 7a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+          </svg>
+          Quran 4:124
+        </div>
+      </section>
+      
+      <!-- Astaghfirullah Button Section -->
+      <section class="astaghfirullah-section">
+        <button class="astaghfirullah-btn" id="astaghfirullah-btn">
+          <i class="bi bi-heart-fill"></i>
+          Astaghfirullah
+        </button>
+        <p class="astaghfirullah-description">
+          Seeking forgiveness from Allah brings peace and blessings. Click to earn +3 points for this good deed.
+        </p>
+      </section>
+    </div>
+    
+    <!-- Not Authenticated Message -->
+    <div id="not-authenticated-message" class="auth-message" style="display: none;">
+      <i class="bi bi-person-check"></i>
+      <h2>Welcome to Climb to Jannah</h2>
+      <p>Please sign in to start your spiritual journey and track your progress.</p>
+      <button class="login-btn" style="margin: 20px auto;">
+        <i class="bi bi-google"></i> Sign in with Google
+      </button>
+    </div>
+  </main>
+  
+  <footer class="site-footer">
+    <p>© 2025 Climb to Jannah | "Every step counts on the way to Jannah."</p>
+  </footer>
+  
+<script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+    
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCh2NU6B9XgZe3wJ0nqRZpZlb-CqVBEcsQ",
+      authDomain: "climb-to-jannah.firebaseapp.com",
+      projectId: "climb-to-jannah",
+      storageBucket: "climb-to-jannah.firebasestorage.app",
+      messagingSenderId: "1063545296291",
+      appId: "1:1063545296291:web:9bb3204542dfa7ec8cb616",
+      measurementId: "G-SP62WZCPXC"
+    };
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    
+    // Predefined deeds data
+    const predefinedGoodDeeds = [
+      { text: "Pray Fajr on time", points: 100, completed: false, predefined: true },
+      { text: "Pray Zohar on time", points: 100, completed: false, predefined: true },
+      { text: "Pray Asar on time", points: 100, completed: false, predefined: true },
+      { text: "Pray Magrib on time", points: 100, completed: false, predefined: true },
+      { text: "Pray Esah on time", points: 100, completed: false, predefined: true },
+      { text: "Read Quran for 10 minutes", points: 95, completed: false, predefined: true },
+      { text: "Help someone in need", points: 88, completed: false, predefined: true },
+      { text: "Give charity", points: 90, completed: false, predefined: true }
+    ];
+    
+    const predefinedBadDeeds = [
+      { text: "Lying", points: -95, completed: false, predefined: true },
+      { text: "Wasting time", points: -90, completed: false, predefined: true },
+      { text: "Explicit content", points: -100, completed: false, predefined: true },
+      { text: "Anger", points: -85, completed: false, predefined: true }
+    ];
+
+    // Global variable to track button state
+    let isButtonAnimating = false;
+    
+    // Authentication state observer
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("User signed in:", user.displayName);
+        showUserProfile(user);
+        loadUserData(user.uid);
+        showAuthenticatedContent();
+      } else {
+        console.log("User signed out");
+        showLoginButton();
+        showNotAuthenticatedMessage();
+      }
+    });
+    
+    // Google Sign-in function
+    async function signInWithGoogle() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        console.log("Signed in successfully:", user.displayName);
+        
+        // Create user document in Firestore if doesn't exist
+        await initializeUserData(user.uid, user.displayName, user.email, user.photoURL);
+        
+      } catch (error) {
+        console.error("Sign-in error:", error);
+        alert("Sign-in failed: " + error.message);
+      }
+    }
+    
+    // Sign out function
+    async function signOutUser() {
+      try {
+        await signOut(auth);
+        console.log("Signed out successfully");
+      } catch (error) {
+        console.error("Sign-out error:", error);
+      }
+    }
+    
+    // Initialize user data in Firestore
+    async function initializeUserData(uid, displayName, email, photoURL) {
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        // New user - create initial data
+        const today = new Date().toDateString();
+        const userData = {
+          displayName: displayName,
+          email: email,
+          photoURL: photoURL,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          dailyData: {
+            date: today,
+            goodDeeds: 0,
+            badDeeds: 0,
+            points: 0
+          },
+          lifetimeData: {
+            totalGoodDeeds: 0,
+            totalBadDeeds: 0,
+            totalPoints: 0,
+            deedFrequency: {}
+          },
+          goodDeeds: predefinedGoodDeeds,
+          badDeeds: predefinedBadDeeds
+        };
+        
+        await setDoc(userRef, userData);
+        console.log("New user data created");
+      } else {
+        // Update last login for existing user
+        await setDoc(userRef, { lastLogin: new Date().toISOString() }, { merge: true });
+      }
+    }
+    
+    // Load user data from Firestore
+    async function loadUserData(uid) {
+      try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          console.log("User data loaded:", userData);
+          updateDashboard(userData);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
+    
+    // NEW: Sidebar link handling
+    function handleSidebarClick(event) {
+      event.preventDefault();
+      
+      const user = auth.currentUser;
+      if (!user) {
+        // Simple alert for non-logged in users
+        alert('🔐 Please sign in to access this feature.\n\nYour spiritual journey data will be saved securely.');
+        
+        // Ask if they want to sign in
+        const wantToSignIn = confirm('Would you like to sign in now?');
+        if (wantToSignIn) {
+          signInWithGoogle();
+        }
+        return;
+      }
+      
+      // If user is logged in, redirect to the page
+      const page = event.target.closest('a').getAttribute('data-page');
+      if (page) {
+        window.location.href = `/${page}.html`;
+      }
+    }
+    
+    // UI update functions
+    function showUserProfile(user) {
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('user-profile').style.display = 'flex';
+      
+      const userAvatar = document.getElementById('user-avatar');
+      const dropdownAvatar = document.getElementById('dropdown-avatar');
+      const dropdownName = document.getElementById('dropdown-name');
+      const dropdownEmail = document.getElementById('dropdown-email');
+      
+      userAvatar.src = user.photoURL || 'default-avatar.png';
+      dropdownAvatar.src = user.photoURL || 'default-avatar.png';
+      dropdownName.textContent = user.displayName;
+      dropdownEmail.textContent = user.email;
+    }
+    
+    function showLoginButton() {
+      document.getElementById('login-btn').style.display = 'block';
+      document.getElementById('user-profile').style.display = 'none';
+      hideDropdown();
+    }
+    
+    function showAuthenticatedContent() {
+      document.getElementById('authenticated-content').style.display = 'block';
+      document.getElementById('not-authenticated-message').style.display = 'none';
+    }
+    
+    function showNotAuthenticatedMessage() {
+      document.getElementById('authenticated-content').style.display = 'none';
+      document.getElementById('not-authenticated-message').style.display = 'block';
+    }
+    
+    function updateDashboard(userData) {
+      // Update dashboard stats
+      if (userData.dailyData) {
+        document.querySelector('.summary-card .stat:nth-child(1) .number').textContent = userData.dailyData.goodDeeds;
+        document.querySelector('.summary-card .stat:nth-child(2) .number').textContent = userData.dailyData.badDeeds;
+        document.querySelector('.summary-card .stat:nth-child(3) .number').textContent = userData.dailyData.points + 'm';
+      }
+    }
+    
+    // Dropdown functionality
+    function toggleDropdown() {
+      const dropdown = document.getElementById('user-dropdown');
+      dropdown.classList.toggle('show');
+    }
+    
+    function hideDropdown() {
+      const dropdown = document.getElementById('user-dropdown');
+      dropdown.classList.remove('show');
+    }
+    
+    // FIXED: Astaghfirullah Button Functionality - SIRF POINTS ADD HONGE
+    async function handleAstaghfirullahClick() {
+      // Check if button is already animating
+      if (isButtonAnimating) {
+        return;
+      }
+      
+      const user = auth.currentUser;
+      
+      if (!user) {
+        alert('Please sign in to use this feature.');
+        return;
+      }
+      
+      try {
+        // Set button to animating state
+        isButtonAnimating = true;
+        const btn = document.getElementById('astaghfirullah-btn');
+        btn.style.pointerEvents = 'none'; // Disable clicks
+        
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const today = new Date().toDateString();
+          
+          // Check if daily data is for today, if not reset
+          let dailyData = userData.dailyData;
+          if (dailyData.date !== today) {
+            dailyData = {
+              date: today,
+              goodDeeds: 0,
+              badDeeds: 0,
+              points: 0
+            };
+          }
+          
+          // SIRF POINTS UPDATE - GOOD DEEDS COUNT NAHI BADHEGA
+          const updatedDailyData = {
+            ...dailyData,
+            points: dailyData.points + 3
+            // goodDeeds: dailyData.goodDeeds + 1 - YEH LINE REMOVE KARDI
+          };
+          
+          const updatedLifetimeData = {
+            ...userData.lifetimeData,
+            totalPoints: (userData.lifetimeData.totalPoints || 0) + 3,
+            // totalGoodDeeds: (userData.lifetimeData.totalGoodDeeds || 0) + 1 - YEH BHI REMOVE
+            deedFrequency: {
+              ...userData.lifetimeData.deedFrequency,
+              "Astaghfirullah": {
+                count: ((userData.lifetimeData.deedFrequency && userData.lifetimeData.deedFrequency["Astaghfirullah"]) ? userData.lifetimeData.deedFrequency["Astaghfirullah"].count : 0) + 1,
+                type: "prayer" // Special type for Astaghfirullah
+              }
+            }
+          };
+          
+          // Update Firestore
+          await updateDoc(userRef, {
+            dailyData: updatedDailyData,
+            lifetimeData: updatedLifetimeData
+          });
+          
+          // Update UI
+          updateDashboard({
+            dailyData: updatedDailyData,
+            lifetimeData: updatedLifetimeData
+          });
+          
+          // Show confirmation
+          showConfirmation();
+        }
+      } catch (error) {
+        console.error("Error updating Astaghfirullah points:", error);
+        alert("Error updating points: " + error.message);
+        
+        // Reset button state on error
+        isButtonAnimating = false;
+        const btn = document.getElementById('astaghfirullah-btn');
+        btn.style.pointerEvents = 'auto';
+      }
+    }
+    
+    // Show confirmation message
+    function showConfirmation() {
+      const btn = document.getElementById('astaghfirullah-btn');
+      const originalText = btn.innerHTML;
+      
+      // Change button text temporarily
+      btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> +3 Points Added!';
+      btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      
+      // Revert after 2 seconds and enable button again
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.background = 'linear-gradient(135deg, #0f6d5b 0%, #0a8c6f 100%)';
+        btn.style.pointerEvents = 'auto';
+        isButtonAnimating = false;
+      }, 2000);
+    }
+    
+    // Make functions globally available
+    window.signInWithGoogle = signInWithGoogle;
+    window.signOutUser = signOutUser;
+    window.toggleDropdown = toggleDropdown;
+    window.handleSidebarClick = handleSidebarClick;
+    window.handleAstaghfirullahClick = handleAstaghfirullahClick;
+    
+    // Add event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('login-btn').addEventListener('click', signInWithGoogle);
+      
+      // Avatar click for dropdown
+      const userAvatar = document.getElementById('user-avatar');
+      if (userAvatar) {
+        userAvatar.addEventListener('click', toggleDropdown);
+      }
+      
+      // Sidebar link click handlers
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.addEventListener('click', handleSidebarClick);
+      });
+      
+      // Astaghfirullah button event listener
+      document.getElementById('astaghfirullah-btn').addEventListener('click', handleAstaghfirullahClick);
+      
+      // Also make the login button in the message work
+      document.querySelector('#not-authenticated-message .login-btn')?.addEventListener('click', signInWithGoogle);
+      
+      // Close dropdown when clicking on dropdown items
+      document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', hideDropdown);
+      });
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const userProfile = document.getElementById('user-profile');
+      const dropdown = document.getElementById('user-dropdown');
+      
+      if (userProfile && dropdown && !userProfile.contains(event.target) && dropdown.classList.contains('show')) {
+        hideDropdown();
+      }
+    });
+    
+    // Your existing sidebar functionality
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const body = document.body;
+    
+    if (sidebarToggle && sidebar && overlay) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      });
+      
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      });
+    }
+    
+    // Close sidebar when clicking on a menu item (for mobile)
+    const menuItems = document.querySelectorAll('.sidebar-menu a');
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('active');
+          body.classList.remove('sidebar-open');
+        }
+      });
+    });
+</script>
+</body>
+
+</html>

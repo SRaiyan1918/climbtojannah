@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Goals - Climb to Jannah</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    /* --- Base & Theme Colors --- */
+    :root {
+      --accent-green: #0f6d5b;
+      --bg-primary: #e6f5f1;
+      /* Soft greenish background */
+      --bg-secondary: #ffffff;
+      --accent-red: #ef466f;
+      /* For bad deeds */
+      --accent-yellow: #f59e0b;
+      /* Highlight / stars */
+      --text-primary: #0f172a;
+      /* Dark text */
+      --text-muted: #6b7280;
+      /* Grey text */
+      --border: rgba(15, 109, 91, 0.2);
+      --radius: 14px;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    
+    /* --- Global Styles --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-size: 16px;
+      transition: margin-left 0.3s ease;
+    }
+    
+    body.sidebar-open {
+      margin-left: 250px;
+    }
+    
+    /* --- Header & Nav --- */
+    header nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius);
+      position: relative;
+      z-index: 100;
+    }
+    
+    nav .left,
+    nav .right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.3s ease;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    
+    nav button:hover {
+      background-color: rgba(15, 109, 91, 0.1);
+    }
+    
+    nav .title #title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--accent-green);
+    }
+    
+    nav .title #title em {
+      font-style: normal;
+      color: var(--accent-green);
+    }
+    
+    nav .title #sub-title {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Sidebar --- */
+    .sidebar-container {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 250px;
+      height: 100vh;
+      background: var(--bg-secondary);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: left 0.3s ease;
+      z-index: 99;
+      overflow-y: auto;
+    }
+    
+    .sidebar-container.open {
+      left: 0;
+    }
+    
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .sidebar-header img {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .sidebar-header h3 {
+      color: var(--accent-green);
+      font-size: 18px;
+    }
+    
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+    
+    .sidebar-menu ul {
+      list-style: none;
+    }
+    
+    .sidebar-menu li {
+      margin-bottom: 5px;
+    }
+    
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+    }
+    
+    .sidebar-menu a:hover {
+      background-color: rgba(15, 109, 91, 0.1);
+    }
+    
+    .sidebar-menu a.active {
+      background-color: rgba(15, 109, 91, 0.15);
+      border-right: 3px solid var(--accent-green);
+      color: var(--accent-green);
+    }
+    
+    .sidebar-menu i {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* --- Greeting Section --- */
+    header .greeting {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .greeting .first h1 {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    
+    .greeting .second {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Main --- */
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      transition: margin-left 0.3s ease;
+    }
+    
+    /* --- Daily Goals Page Styles --- */
+    .daily-goals-container {
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+    }
+    
+    .points-display {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--accent-green);
+      margin-bottom: 10px;
+    }
+    
+    .points-change {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    .points-change.positive {
+      color: var(--accent-green);
+    }
+    
+    .points-change.negative {
+      color: var(--accent-red);
+    }
+    
+    .deeds-section {
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 22px rgba(12, 40, 32, 0.06);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .deeds-section h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .good-deeds h2 {
+      color: var(--accent-green);
+    }
+    
+    .bad-deeds h2 {
+      color: var(--accent-red);
+    }
+    
+    .deed-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .deed-item:last-child {
+      border-bottom: none;
+    }
+    
+    .deed-checkbox {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      margin-right: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    
+    .deed-checkbox.checked {
+      background-color: var(--accent-green);
+      border-color: var(--accent-green);
+      color: white;
+    }
+    
+    .bad-deeds .deed-checkbox.checked {
+      background-color: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+    
+    .deed-text {
+      flex: 1;
+      font-size: 16px;
+    }
+    
+    .deed-points {
+      font-size: 14px;
+      font-weight: 600;
+      margin-right: 10px;
+      color: var(--text-muted);
+    }
+    
+    .good-deeds .deed-points {
+      color: var(--accent-green);
+    }
+    
+    .bad-deeds .deed-points {
+      color: var(--accent-red);
+    }
+    
+    .deed-item.completed .deed-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+    
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+    
+    .deed-item:hover .delete-btn {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .delete-btn:hover {
+      color: var(--accent-red);
+      background-color: rgba(239, 70, 111, 0.1);
+    }
+    
+    .add-deed-form {
+      display: flex;
+      margin-top: 16px;
+    }
+    
+    .add-deed-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px 0 0 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    .add-deed-button {
+      background-color: var(--accent-green);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+    }
+    
+    .bad-deeds .add-deed-button {
+      background-color: var(--accent-red);
+    }
+    
+    .add-deed-button:hover {
+      opacity: 0.9;
+    }
+    
+    /* --- Footer --- */
+    .site-footer {
+      background: var(--bg-secondary);
+      text-align: center;
+      padding: 16px;
+      margin-top: 30px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    /* --- Overlay for mobile --- */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 98;
+      display: none;
+    }
+    
+    .overlay.active {
+      display: block;
+    }
+    
+    /* --- Responsive Design --- */
+    @media (max-width: 768px) {
+      body.sidebar-open {
+        margin-left: 0;
+      }
+      
+      .sidebar-container {
+        width: 280px;
+      }
+      
+      .daily-goals-container {
+        padding: 10px;
+      }
+      
+      .deeds-section {
+        padding: 18px;
+      }
+      
+      .delete-btn {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+  </style>
+  
+</head>
+
+<body>
+  <!-- Overlay for mobile sidebar -->
+  <div class="overlay" id="overlay"></div>
+  
+  <!-- Sidebar -->
+  <div class="sidebar-container" id="sidebar">
+    <div class="sidebar-header">
+      <img src="logo.png" alt="Climb to Jannah Logo">
+      <h3>Climb to Jannah</h3>
+    </div>
+    <nav class="sidebar-menu">
+      <ul>
+        <li><a href="/index.html"><i class="bi bi-house-door"></i> Dashboard</a></li>
+        <li><a href="#" class="active"><i class="bi bi-calendar-check"></i> Daily Goals</a></li>
+        <li><a href="/progress-tracking.html"><i class="bi bi-graph-up"></i> Progress Tracking</a></li>
+        <li><a href="/Deed-journal.html"><i class="bi bi-journal-text"></i> Deed Journal</a></li>
+        <li><a href="/Help-&-Support.html"><i class="bi bi-question-circle"></i> Help & Support</a></li>
+      </ul>
+    </nav>
+  </div>
+  
+  <header>
+    <nav>
+      <div class="left">
+        <div class="sidebar">
+          <button id="sidebar-toggle" aria-label="Toggle Sidebar"><i class="bi bi-layout-sidebar"></i></button>
+        </div>
+        <div class="logo">
+          <img src="logo.png" alt="Climb to Jannah Logo" width="40">
+        </div>
+        <div class="title">
+          <div id="title">Daily Goals</div>
+          <div id="sub-title">Set and track your daily spiritual goals</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="navigate-buttons">
+          <div class="challenges">
+            <button aria-label="Challenges"><i class="bi bi-flag"></i></button>
+          </div>
+        </div>
+        <div class="person">
+          <button aria-label="Profile"><i class="bi bi-person-circle"></i></button>
+        </div>
+      </div>
+    </nav>
+  </header>
+  
+  <main>
+    <div class="daily-goals-container">
+      <!-- Points Summary -->
+      
+      <!-- Good Deeds Section -->
+      <section class="deeds-section good-deeds">
+        <h2><i class="bi bi-check-circle-fill" style="color: var(--accent-green);"></i> Good Deeds</h2>
+        
+        <div class="deeds-list" id="good-deeds-list">
+          <!-- Good deeds will be populated here -->
+        </div>
+        
+        <form class="add-deed-form" id="add-good-deed-form">
+          <input type="text" class="add-deed-input" placeholder="Add a good deed..." required>
+          <button type="submit" class="add-deed-button">Add</button>
+        </form>
+      </section>
+      
+      <!-- Bad Deeds Section -->
+      <section class="deeds-section bad-deeds">
+        <h2><i class="bi bi-x-circle-fill" style="color: var(--accent-red);"></i> Bad Deeds to Avoid</h2>
+        
+        <div class="deeds-list" id="bad-deeds-list">
+          <!-- Bad deeds will be populated here -->
+        </div>
+        
+        <form class="add-deed-form" id="add-bad-deed-form">
+          <input type="text" class="add-deed-input" placeholder="Add a bad deed to avoid..." required>
+          <button type="submit" class="add-deed-button">Add</button>
+        </form>
+      </section>
+    </div>
+  </main>
+  
+  <footer class="site-footer">
+    <p>© 2025 Climb to Jannah | "Every step counts on the way to Jannah."</p>
+  </footer>
+  
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCh2NU6B9XgZe3wJ0nqRZpZlb-CqVBEcsQ",
+      authDomain: "climb-to-jannah.firebaseapp.com",
+      projectId: "climb-to-jannah",
+      storageBucket: "climb-to-jannah.firebasestorage.app",
+      messagingSenderId: "1063545296291",
+      appId: "1:1063545296291:web:9bb3204542dfa7ec8cb616",
+      measurementId: "G-SP62WZCPXC"
+    };
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // DOM Elements
+    const goodDeedsList = document.getElementById('good-deeds-list');
+    const badDeedsList = document.getElementById('bad-deeds-list');
+    const addGoodDeedForm = document.getElementById('add-good-deed-form');
+    const addBadDeedForm = document.getElementById('add-bad-deed-form');
+    const totalPointsElement = document.getElementById('total-points');
+    const pointsChangeElement = document.getElementById('points-change');
+    
+    // Predefined deeds data
+    const predefinedGoodDeeds = [
+      { text: "Pray Fajr on time", points: 100 },
+      { text: "Pray Zohar on time", points: 100 },
+      { text: "Pray Asar on time", points: 100 },
+      { text: "Pray Magrib on time", points: 100 },
+      { text: "Pray Esah on time", points: 100 },
+      { text: "Read Quran for 10 minutes", points: 95 },
+      { text: "Help someone in need", points: 88 },
+      { text: "Give charity", points: 90 }
+    ];
+    
+    const predefinedBadDeeds = [
+      { text: "Lying", points: -95 },
+      { text: "Wasting time", points: -90 },
+      { text: "Explicit content", points: -100 },
+      { text: "Anger", points: -85 }
+    ];
+    
+    let currentUser = null;
+    let userData = null;
+    
+    // Check authentication
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        loadUserData(user.uid);
+      } else {
+        // Redirect to dashboard if not logged in
+        window.location.href = '/index.html';
+      }
+    });
+    
+    // Load user data from Firestore
+    async function loadUserData(uid) {
+      try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          userData = userSnap.data();
+          console.log("User data loaded:", userData);
+          
+          // Check for new day and reset if needed
+          await checkNewDayAndReset(uid);
+          
+          // Render deeds and update display
+          renderDeeds();
+          updatePointsDisplay();
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
+    
+    // NEW: Check for new day and reset deeds
+    async function checkNewDayAndReset(uid) {
+      const today = new Date().toDateString();
+      
+      if (userData.dailyData.date !== today) {
+        console.log("New day detected! Resetting deeds...");
+        
+        // Reset all deeds to incomplete
+        const resetGoodDeeds = userData.goodDeeds.map(deed => ({
+          ...deed,
+          completed: false
+        }));
+        
+        const resetBadDeeds = userData.badDeeds.map(deed => ({
+          ...deed,
+          completed: false
+        }));
+        
+        // Update Firestore with reset data
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+          goodDeeds: resetGoodDeeds,
+          badDeeds: resetBadDeeds,
+          dailyData: {
+            date: today,
+            goodDeeds: 0,
+            badDeeds: 0,
+            points: 0
+          }
+        });
+        
+        // Reload data
+        await loadUserData(uid);
+        console.log("Deeds reset completed for new day!");
+      }
+    }
+    
+    // Calculate points for new deeds
+    function calculatePoints(deedText, isGood) {
+      const allPredefined = [...predefinedGoodDeeds, ...predefinedBadDeeds];
+      const predefinedDeed = allPredefined.find(deed =>
+        deed.text.toLowerCase() === deedText.toLowerCase());
+      
+      if (predefinedDeed) return predefinedDeed.points;
+      
+      if (isGood) {
+        return Math.floor(Math.random() * 11) + 30; // 30-40 points
+      } else {
+        return -(Math.floor(Math.random() * 11) + 60); // -60 to -70 points
+      }
+    }
+    
+    // Update deed completion in Firestore
+    async function updateDeedCompletion(deedType, index, completed) {
+      if (!currentUser || !userData) return;
+      
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const deeds = deedType === 'good' ? [...userData.goodDeeds] : [...userData.badDeeds];
+        const deed = deeds[index];
+        
+        // Update deed completion status
+        deeds[index].completed = completed;
+        
+        // Calculate points change
+        const pointsChange = completed ? deed.points : -deed.points;
+        const goodDeedsChange = deedType === 'good' ? (completed ? 1 : -1) : 0;
+        const badDeedsChange = deedType === 'bad' ? (completed ? 1 : -1) : 0;
+        
+        // Update deed frequency
+        const frequencyUpdate = { ...userData.lifetimeData.deedFrequency };
+        if (completed) {
+          if (!frequencyUpdate[deed.text]) {
+            frequencyUpdate[deed.text] = { count: 0, type: deedType };
+          }
+          frequencyUpdate[deed.text].count += 1;
+        } else {
+          if (frequencyUpdate[deed.text]) {
+            frequencyUpdate[deed.text].count -= 1;
+            if (frequencyUpdate[deed.text].count <= 0) {
+              delete frequencyUpdate[deed.text];
+            }
+          }
+        }
+        
+        // Update Firestore
+        await updateDoc(userRef, {
+          [`${deedType}Deeds`]: deeds,
+          'dailyData.points': userData.dailyData.points + pointsChange,
+          'dailyData.goodDeeds': userData.dailyData.goodDeeds + goodDeedsChange,
+          'dailyData.badDeeds': userData.dailyData.badDeeds + badDeedsChange,
+          'lifetimeData.totalPoints': userData.lifetimeData.totalPoints + pointsChange,
+          'lifetimeData.totalGoodDeeds': userData.lifetimeData.totalGoodDeeds + goodDeedsChange,
+          'lifetimeData.totalBadDeeds': userData.lifetimeData.totalBadDeeds + badDeedsChange,
+          'lifetimeData.deedFrequency': frequencyUpdate
+        });
+        
+        // Reload updated data
+        await loadUserData(currentUser.uid);
+        
+      } catch (error) {
+        console.error("Error updating deed:", error);
+      }
+    }
+    
+    // Add new deed to Firestore
+    async function addNewDeed(deedText, isGood) {
+      if (!currentUser || !userData) return;
+      
+      try {
+        const points = calculatePoints(deedText, isGood);
+        const newDeed = {
+          text: deedText,
+          points: points,
+          completed: false,
+          predefined: false
+        };
+        
+        const userRef = doc(db, "users", currentUser.uid);
+        const deedType = isGood ? 'goodDeeds' : 'badDeeds';
+        const updatedDeeds = [...userData[deedType], newDeed];
+        
+        await updateDoc(userRef, {
+          [deedType]: updatedDeeds
+        });
+        
+        // Reload updated data
+        await loadUserData(currentUser.uid);
+        
+      } catch (error) {
+        console.error("Error adding new deed:", error);
+      }
+    }
+    
+    // Delete deed from Firestore
+    async function deleteDeed(deedType, index) {
+      if (!currentUser || !userData) return;
+      
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const deeds = [...userData[deedType]];
+        const deed = deeds[index];
+        
+        // If deed was completed, adjust points
+        if (deed.completed) {
+          const pointsChange = -deed.points;
+          const goodDeedsChange = deedType === 'goodDeeds' ? -1 : 0;
+          const badDeedsChange = deedType === 'badDeeds' ? -1 : 0;
+          
+          // Update frequency
+          const frequencyUpdate = { ...userData.lifetimeData.deedFrequency };
+          if (frequencyUpdate[deed.text]) {
+            frequencyUpdate[deed.text].count -= 1;
+            if (frequencyUpdate[deed.text].count <= 0) {
+              delete frequencyUpdate[deed.text];
+            }
+          }
+          
+          await updateDoc(userRef, {
+            'dailyData.points': userData.dailyData.points + pointsChange,
+            'dailyData.goodDeeds': userData.dailyData.goodDeeds + goodDeedsChange,
+            'dailyData.badDeeds': userData.dailyData.badDeeds + badDeedsChange,
+            'lifetimeData.totalPoints': userData.lifetimeData.totalPoints + pointsChange,
+            'lifetimeData.totalGoodDeeds': userData.lifetimeData.totalGoodDeeds + goodDeedsChange,
+            'lifetimeData.totalBadDeeds': userData.lifetimeData.totalBadDeeds + badDeedsChange,
+            'lifetimeData.deedFrequency': frequencyUpdate
+          });
+        }
+        
+        // Remove the deed
+        deeds.splice(index, 1);
+        await updateDoc(userRef, {
+          [deedType]: deeds
+        });
+        
+        // Reload updated data
+        await loadUserData(currentUser.uid);
+        
+      } catch (error) {
+        console.error("Error deleting deed:", error);
+      }
+    }
+    
+    // Update points display
+    function updatePointsDisplay() {
+      if (totalPointsElement && userData) {
+        totalPointsElement.textContent = userData.dailyData.points;
+      }
+      if (pointsChangeElement && userData) {
+        pointsChangeElement.textContent = `Today: ${userData.dailyData.goodDeeds} good, ${userData.dailyData.badDeeds} bad`;
+      }
+    }
+    
+    // Render deeds lists
+    function renderDeeds() {
+      if (!userData) return;
+      
+      goodDeedsList.innerHTML = '';
+      badDeedsList.innerHTML = '';
+      
+      // Render good deeds
+      userData.goodDeeds.forEach((deed, index) => {
+        const deedItem = document.createElement('div');
+        deedItem.className = `deed-item ${deed.completed ? 'completed' : ''}`;
+        
+        const deleteButton = deed.predefined ? '' :
+          `<button class="delete-btn" data-type="goodDeeds" data-index="${index}">
+           <i class="bi bi-trash"></i>
+         </button>`;
+        
+        deedItem.innerHTML = `
+        <div class="deed-checkbox ${deed.completed ? 'checked' : ''}" data-type="good" data-index="${index}">
+          ${deed.completed ? '<i class="bi bi-check"></i>' : ''}
+        </div>
+        <div class="deed-text">${deed.text}</div>
+        <div class="deed-points">${deed.points > 0 ? '+' : ''}${deed.points}</div>
+        ${deleteButton}
+      `;
+        goodDeedsList.appendChild(deedItem);
+      });
+      
+      // Render bad deeds
+      userData.badDeeds.forEach((deed, index) => {
+        const deedItem = document.createElement('div');
+        deedItem.className = `deed-item ${deed.completed ? 'completed' : ''}`;
+        
+        const deleteButton = deed.predefined ? '' :
+          `<button class="delete-btn" data-type="badDeeds" data-index="${index}">
+           <i class="bi bi-trash"></i>
+         </button>`;
+        
+        deedItem.innerHTML = `
+        <div class="deed-checkbox ${deed.completed ? 'checked' : ''}" data-type="bad" data-index="${index}">
+          ${deed.completed ? '<i class="bi bi-check"></i>' : ''}
+        </div>
+        <div class="deed-text">${deed.text}</div>
+        <div class="deed-points">${deed.points}</div>
+        ${deleteButton}
+      `;
+        badDeedsList.appendChild(deedItem);
+      });
+      
+      // Attach event listeners to checkboxes
+      document.querySelectorAll('.deed-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', function() {
+          const type = this.getAttribute('data-type');
+          const index = parseInt(this.getAttribute('data-index'));
+          const completed = !this.classList.contains('checked');
+          
+          updateDeedCompletion(type, index, completed);
+        });
+      });
+      
+      // Attach event listeners to delete buttons
+      document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const type = this.getAttribute('data-type');
+          const index = parseInt(this.getAttribute('data-index'));
+          
+          deleteDeed(type, index);
+        });
+      });
+    }
+    
+    // Add new good deed
+    addGoodDeedForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = this.querySelector('.add-deed-input');
+      const text = input.value.trim();
+      
+      if (text) {
+        addNewDeed(text, true);
+        input.value = '';
+      }
+    });
+    
+    // Add new bad deed
+    addBadDeedForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = this.querySelector('.add-deed-input');
+      const text = input.value.trim();
+      
+      if (text) {
+        addNewDeed(text, false);
+        input.value = '';
+      }
+    });
+    
+    // Sidebar functionality (keep your existing sidebar code)
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const body = document.body;
+    
+    if (sidebarToggle && sidebar && overlay) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      });
+      
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      });
+    }
+    
+    // Close sidebar when clicking on a menu item (for mobile)
+    const menuItems = document.querySelectorAll('.sidebar-menu a');
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('active');
+          body.classList.remove('sidebar-open');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
