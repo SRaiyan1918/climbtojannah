@@ -1,0 +1,2 @@
+import { expect,test } from 'vitest';import { getPrayerTimes } from './prayerTimes';
+test('returns five chronological prayer times',()=>{const values=getPrayerTimes({latitude:25.5941,longitude:85.1376,date:new Date(2026,8,11),method:'karachi',madhab:'hanafi'});expect(values.map(x=>x.name)).toEqual(['fajr','dhuhr','asr','maghrib','isha']);expect(values.every((item,index)=>index===0||item.time.getTime()>values[index-1].time.getTime())).toBe(true)});

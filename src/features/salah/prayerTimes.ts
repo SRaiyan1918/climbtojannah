@@ -1,0 +1,4 @@
+import { CalculationMethod, Coordinates, Madhab, PrayerTimes } from 'adhan';
+import type { CalculationMethodId, PrayerTimeInput, PrayerTimeItem } from './salahTypes';
+function parameters(method:CalculationMethodId){switch(method){case'egyptian':return CalculationMethod.Egyptian();case'karachi':return CalculationMethod.Karachi();case'umm-al-qura':return CalculationMethod.UmmAlQura();case'north-america':return CalculationMethod.NorthAmerica();default:return CalculationMethod.MuslimWorldLeague();}}
+export function getPrayerTimes(input:PrayerTimeInput):PrayerTimeItem[]{const params=parameters(input.method);params.madhab=input.madhab==='hanafi'?Madhab.Hanafi:Madhab.Shafi;const times=new PrayerTimes(new Coordinates(input.latitude,input.longitude),input.date,params);return[{name:'fajr',time:times.fajr},{name:'dhuhr',time:times.dhuhr},{name:'asr',time:times.asr},{name:'maghrib',time:times.maghrib},{name:'isha',time:times.isha}]}
