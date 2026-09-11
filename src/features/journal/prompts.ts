@@ -1,0 +1,1 @@
+export const journalPrompts=[{id:'went-well',text:'What went well today?'},{id:'improve',text:'What would you like to improve tomorrow?'},{id:'gratitude',text:'What are you grateful for today?'}] as const;

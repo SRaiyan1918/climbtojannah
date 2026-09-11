@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner(userId) { return signedIn() && request.auth.uid == userId; }
+    function validRoutine() {
+      return request.resource.data.keys().hasOnly(['id','title','category','enabled','order','scheduleDays','createdAt','updatedAt'])
+        && request.resource.data.id is string
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.category in ['deen','dunya']
+        && request.resource.data.enabled is bool
+        && request.resource.data.order is number
+        && request.resource.data.scheduleDays is list
+        && request.resource.data.scheduleDays.size() <= 7
+        && request.resource.data.createdAt is string
+        && request.resource.data.updatedAt is string;
+    }
+    match /users/{userId} {
+      allow read, write: if owner(userId);
+      match /routines/{id} { allow read, delete: if owner(userId); allow create, update: if owner(userId) && validRoutine(); }
+      match /dailyCompletions/{id} { allow read, write: if owner(userId); }
+      match /prayerDays/{id} { allow read, write: if owner(userId); }
+      match /quranEntries/{id} { allow read, write: if owner(userId); }
+      match /selfControlHabits/{id} { allow read, write: if owner(userId); }
+      match /selfControlEvents/{id} { allow read, write: if owner(userId); }
+      match /journalEntries/{id} { allow read, write: if owner(userId); }
+      match /weeklyReflections/{id} { allow read, write: if owner(userId); }
+      match /settings/{id} { allow read, write: if owner(userId); }
+    }
+  }
+}

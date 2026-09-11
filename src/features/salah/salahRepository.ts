@@ -1,0 +1,6 @@
+import { doc,getDoc,setDoc } from 'firebase/firestore';import { db } from '../../lib/firebase';import { prayerDaysPath,settingsPath } from '../data/paths';import type { AppSettings,PrayerDay,PrayerName } from '../data/schema';
+const emptyCompleted:Record<PrayerName,boolean>={fajr:false,dhuhr:false,asr:false,maghrib:false,isha:false};
+export async function getPrayerDay(uid:string,dateKey:string):Promise<PrayerDay>{const snap=await getDoc(doc(db,prayerDaysPath(uid),dateKey));return snap.exists()?snap.data() as PrayerDay:{dateKey,completed:{...emptyCompleted},updatedAt:new Date().toISOString()}}
+export async function togglePrayer(uid:string,day:PrayerDay,name:PrayerName){const next={...day,completed:{...day.completed,[name]:!day.completed[name]},updatedAt:new Date().toISOString()};await setDoc(doc(db,prayerDaysPath(uid),day.dateKey),next,{merge:true});return next}
+export async function getPrayerSettings(uid:string):Promise<Partial<AppSettings>>{const snap=await getDoc(doc(db,settingsPath(uid)));return snap.exists()?snap.data() as Partial<AppSettings>:{} }
+export async function savePrayerSettings(uid:string,value:Pick<AppSettings,'prayerLocation'|'prayerCalculationMethod'|'prayerMadhab'>){await setDoc(doc(db,settingsPath(uid)),value,{merge:true})}

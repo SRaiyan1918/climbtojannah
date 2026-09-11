@@ -1,0 +1,2 @@
+import { isRouteErrorResponse,useRouteError } from 'react-router-dom';import { Link } from 'react-router-dom';
+export function RouteErrorBoundary(){const error=useRouteError();const message=isRouteErrorResponse(error)?`${error.status} ${error.statusText}`:error instanceof Error?error.message:'An unexpected route error occurred.';return <main className="page"><div className="page-heading"><div><span className="eyebrow">Recovery</span><h1>Something went wrong</h1><p>{message}</p></div></div><Link className="button button--primary" to="/">Return to dashboard</Link></main>}

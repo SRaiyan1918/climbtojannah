@@ -1,0 +1,5 @@
+import { doc,getDoc,setDoc } from 'firebase/firestore';import { db } from '../../lib/firebase';import { journalEntriesPath,weeklyReflectionsPath } from '../data/paths';import type { JournalEntry,WeeklyReflection } from '../data/schema';
+export async function getJournalEntry(uid:string,dateKey:string):Promise<JournalEntry>{const snap=await getDoc(doc(db,journalEntriesPath(uid),dateKey));return snap.exists()?snap.data() as JournalEntry:{dateKey,body:'',promptIds:[],updatedAt:new Date().toISOString()}}
+export async function saveJournalEntry(uid:string,value:JournalEntry){await setDoc(doc(db,journalEntriesPath(uid),value.dateKey),value,{merge:true})}
+export async function getWeeklyReflection(uid:string,weekKey:string):Promise<WeeklyReflection>{const snap=await getDoc(doc(db,weeklyReflectionsPath(uid),weekKey));return snap.exists()?snap.data() as WeeklyReflection:{weekKey,wins:'',struggle:'',nextFocus:'',gratitude:'',updatedAt:new Date().toISOString()}}
+export async function saveWeeklyReflection(uid:string,value:WeeklyReflection){await setDoc(doc(db,weeklyReflectionsPath(uid),value.weekKey),value,{merge:true})}
