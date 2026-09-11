@@ -1,0 +1,4 @@
+import { doc,getDoc,setDoc } from 'firebase/firestore';import { db } from '../../lib/firebase';import { settingsPath } from '../data/paths';import type { AppSettings } from '../data/schema';
+export const defaultSettings:AppSettings={prayerCalculationMethod:'MuslimWorldLeague',prayerMadhab:'shafi',reminders:{prayers:false,routine:false,browserNotifications:false,quietHours:{enabled:true,start:'22:00',end:'06:00'},updatedAt:new Date().toISOString()}};
+export async function getSettings(uid:string):Promise<AppSettings>{const snap=await getDoc(doc(db,settingsPath(uid)));return snap.exists()?{...defaultSettings,...snap.data(),reminders:{...defaultSettings.reminders,...(snap.data().reminders??{}),quietHours:{...defaultSettings.reminders.quietHours,...(snap.data().reminders?.quietHours??{})}}} as AppSettings:defaultSettings}
+export async function saveSettings(uid:string,value:AppSettings){await setDoc(doc(db,settingsPath(uid)),value,{merge:true})}

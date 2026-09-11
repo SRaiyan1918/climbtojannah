@@ -1,6 +1,2 @@
-import { Outlet } from 'react-router-dom';
-import { BottomNav } from './BottomNav';
-import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
-import './layout.css';
-export function AppShell(){return <div className="app-frame"><Sidebar/><div className="app-main"><TopBar/><Outlet/></div><BottomNav/></div>}
+import { Outlet } from 'react-router-dom';import { StatusBanner } from '../ui/StatusBanner';import { useOnlineStatus } from '../../lib/network';import { BottomNav } from './BottomNav';import { Sidebar } from './Sidebar';import { TopBar } from './TopBar';import './layout.css';
+export function AppShell(){const online=useOnlineStatus();return <div className="app-frame"><Sidebar/><div className="app-main"><TopBar/>{!online&&<StatusBanner tone="warning">Offline — changes will sync when connection returns.</StatusBanner>}<Outlet/></div><BottomNav/></div>}
