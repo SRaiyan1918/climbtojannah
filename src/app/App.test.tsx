@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
-import { test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 vi.mock('../lib/firebase', () => ({ auth: {}, db: {} }));
 vi.mock('../features/auth/AuthProvider', async () => {
