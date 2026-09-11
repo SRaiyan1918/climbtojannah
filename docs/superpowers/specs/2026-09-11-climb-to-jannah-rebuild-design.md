@@ -54,7 +54,7 @@ Habits a user wants to avoid are tracked separately from positive routines.
 ### 4.2 Backend / platform
 - Firebase Authentication
 - Cloud Firestore
-- Firebase-compatible hosting/deployment flow
+- Firebase Hosting as the production hosting target
 - PWA service worker and web manifest
 
 ### 4.3 Authentication
@@ -183,17 +183,20 @@ Requirements:
 - quiet hours
 - avoid notification spam
 - gentle recovery prompts when a routine slips
+- notification capabilities must degrade gracefully on browsers/platforms that restrict web notifications
 
 ## 8. PWA / Offline Behavior
 
 The app should be installable as a PWA.
 
-Offline goals:
-- app shell loads offline
-- recent dashboard/routine data remains usable where feasible
-- writes can queue locally and sync when connectivity returns
-- show clear sync/offline state
-- avoid silent data loss
+Offline requirements:
+- app shell loads offline after first successful load
+- recent dashboard/routine data remains available through local persistence
+- routine, salah, Qur’an, self-control, and journal writes should use Firestore offline persistence where supported
+- queued Firestore writes sync automatically when the app regains connectivity
+- the UI clearly shows offline, pending-sync, and sync-failure states
+- features that genuinely require network access must show a clear offline state instead of failing silently
+- do not promise OS-level background execution or background sync when the platform does not support it
 
 ## 9. Visual Design System
 
@@ -298,9 +301,10 @@ GitHub Actions should run at least build, lint, type-check, and tests.
 
 - Preserve `main` until rebuild is verified.
 - Develop on `upgrade/react-rebuild`.
-- Clean legacy pathing issues such as root-relative links that break under project hosting.
-- Review/remove/fix legacy CNAME configuration as part of deployment work.
-- Final hosting target should support SPA routing and PWA requirements reliably.
+- Use Firebase Hosting for the production SPA/PWA so route fallback, caching, and Firebase integration are predictable.
+- Keep GitHub as the source repository and CI origin.
+- Remove or replace the legacy GitHub Pages/CNAME setup during cutover so two competing production configurations are not left active accidentally.
+- Custom-domain configuration, if desired later, should be attached to the verified Firebase Hosting deployment.
 
 ## 16. Legacy Replacement Scope
 
