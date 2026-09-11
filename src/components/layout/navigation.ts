@@ -1,0 +1,2 @@
+import { BookOpen, CircleGauge, ClipboardCheck, HeartHandshake, LayoutDashboard, MoonStar, Settings, TrendingUp } from 'lucide-react';
+export const primaryNav=[{to:'/',label:'Dashboard',icon:LayoutDashboard},{to:'/routine',label:'Routine',icon:ClipboardCheck},{to:'/salah',label:'Salah',icon:MoonStar},{to:'/quran',label:'Qur’an',icon:BookOpen},{to:'/self-control',label:'Self-Control',icon:CircleGauge},{to:'/journal',label:'Journal',icon:HeartHandshake},{to:'/progress',label:'Progress',icon:TrendingUp},{to:'/settings',label:'Settings',icon:Settings}];
