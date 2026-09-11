@@ -4,7 +4,7 @@
 
 **Goal:** Replace the legacy standalone HTML prototype with a secure, premium, mobile-first React + TypeScript + Firebase PWA for private Muslim productivity tracking.
 
-**Architecture:** Build a Vite React SPA with feature-scoped modules, Firebase Authentication and Firestore repositories, Firestore offline persistence, a shared design system, route-level error/loading handling, and PWA support. Keep `main` untouched until the new branch passes CI and product verification; use Firebase Hosting for final SPA/PWA deployment.
+**Architecture:** Build a Vite React SPA with feature-scoped modules, Firebase Authentication and Firestore repositories, Firestore offline persistence, a shared design system, route-level loading/error handling, and PWA support. Keep `main` untouched until the rebuild passes CI and manual verification; use Firebase Hosting for production.
 
 **Tech Stack:** React, TypeScript, Vite, React Router, Firebase Auth/Firestore, `react-hook-form`, `zod`, `@hookform/resolvers`, `i18next`, `react-i18next`, `date-fns`, `adhan`, `recharts`, `lucide-react`, `vite-plugin-pwa`, Vitest, React Testing Library, Firebase Emulator Suite, Playwright, ESLint.
 
@@ -15,23 +15,23 @@
 - Public Muslim productivity app.
 - Personal data private by default.
 - Optional sharing can be added later, always opt-in.
-- The app must never claim to measure Allah's reward, sin weight, Jannah distance, or spiritual rank.
-- Completing routines may improve a **Consistency Score**; the score represents adherence to user-defined routines only.
-- Self-Control tracking uses clean streaks, slips, recovery, and trends; no shame score or arbitrary religious penalty value.
+- Never claim to measure Allah's reward, sin weight, Jannah distance, or spiritual rank.
+- **Consistency Score** means routine adherence only.
+- Self-Control uses clean streaks, slips, recovery, and trends; no shame score or arbitrary religious penalty.
 - Launch English-first with centralized UI strings/i18n-ready structure.
-- No migration of legacy tracking data is required.
-- Support Google sign-in, email/password registration/login, password reset, and email verification where appropriate.
-- Firebase Hosting is the production hosting target.
-- PWA app shell must load offline after first successful load.
-- Firestore writes must use offline persistence where supported and sync when connectivity returns.
-- Mobile-first, accessible, keyboard-friendly, reduced-motion aware.
-- No unnecessary fixed-interval Firestore refetch loops.
-- Before merge to `main`: type-check, lint, production build, unit tests, core integration flows, and responsive checks must pass.
-- Do not add public leaderboards, competitive spiritual rankings, public default feeds, chat/forums, paid subscriptions, complex admin dashboards, or AI religious rulings in v1.
+- No legacy tracking-data migration.
+- Support Google sign-in, email/password registration/login, password reset, and email verification for email/password registrations.
+- Firebase Hosting is the production target.
+- PWA app shell loads offline after first successful load.
+- Firestore writes use offline persistence where supported and sync after reconnect.
+- Mobile-first, keyboard-friendly, sufficient contrast, visible focus, and reduced-motion support.
+- No fixed-interval Firestore polling.
+- Before merge to `main`: lint, type-check, unit tests, Firestore rule tests, production build, core E2E flows, and responsive checks pass.
+- No public leaderboards, competitive spiritual rankings, public default feeds, chat/forums, paid subscriptions, complex admin dashboards, or AI religious rulings in v1.
 
 ---
 
-## Planned File Structure
+## File Structure
 
 ```text
 .
@@ -41,28 +41,27 @@
 ├── firestore.rules
 ├── index.html
 ├── package.json
+├── playwright.config.ts
 ├── tsconfig.json
 ├── vite.config.ts
-├── playwright.config.ts
+├── public/icons/
 ├── src/
 │   ├── main.tsx
 │   ├── app/
 │   │   ├── App.tsx
 │   │   ├── router.tsx
+│   │   ├── RouteErrorBoundary.tsx
 │   │   ├── providers/AppProviders.tsx
 │   │   └── styles/{tokens.css,global.css}
 │   ├── components/
 │   │   ├── layout/{AppShell.tsx,BottomNav.tsx,Sidebar.tsx,TopBar.tsx}
-│   │   └── ui/{Button.tsx,Card.tsx,EmptyState.tsx,Field.tsx,Modal.tsx,ProgressRing.tsx,StatusBanner.tsx}
-│   ├── lib/
-│   │   ├── firebase.ts
-│   │   ├── i18n.ts
-│   │   ├── dates.ts
-│   │   ├── network.ts
-│   │   └── validation.ts
+│   │   └── ui/{Button.tsx,Card.tsx,EmptyState.tsx,Field.tsx,StatusBanner.tsx}
+│   ├── lib/{firebase.ts,i18n.ts,dates.ts,network.ts}
 │   ├── locales/en/common.json
 │   ├── features/
 │   │   ├── auth/
+│   │   ├── data/
+│   │   ├── security/
 │   │   ├── dashboard/
 │   │   ├── routines/
 │   │   ├── salah/
@@ -72,87 +71,75 @@
 │   │   ├── progress/
 │   │   ├── settings/
 │   │   └── support/
-│   └── test/
-│       ├── setup.ts
-│       └── firebaseEmulator.ts
-└── e2e/
-    ├── auth.spec.ts
-    └── core-flow.spec.ts
+│   └── test/{setup.ts,firebaseEmulator.ts}
+└── e2e/{auth.spec.ts,core-flow.spec.ts}
 ```
 
-Each feature owns its types, repository, hooks, UI, and tests so domain logic can change without coupling unrelated pages.
+Each feature owns its types, repository, domain helpers, UI, and tests.
 
 ---
 
-### Task 1: Bootstrap the React/TypeScript application and CI baseline
+### Task 1: Bootstrap React/TypeScript and CI
 
-**Files:**
-- Create: `package.json`
-- Create: `vite.config.ts`
-- Create: `tsconfig.json`
-- Create: `src/main.tsx`
-- Create: `src/app/App.tsx`
-- Create: `src/test/setup.ts`
-- Create: `.github/workflows/ci.yml`
-- Keep temporarily: legacy `*.html` files until Task 13 cutover
+**Files:** Create `package.json`, `vite.config.ts`, `tsconfig.json`, `src/main.tsx`, `src/app/App.tsx`, `src/test/setup.ts`, `.github/workflows/ci.yml`. Keep legacy HTML temporarily.
 
-**Interfaces:**
-- Produces: a runnable Vite React app, `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`.
+**Produces:** runnable Vite app and commands `npm run lint`, `npm run typecheck`, `npm test -- --run`, `npm run build`.
 
-- [ ] **Step 1: Write the smoke test**
+- [ ] **Step 1: Add failing smoke test**
 
-Create `src/app/App.test.tsx`:
+`src/app/App.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
 
-test('renders the product name', () => {
+test('renders product name', () => {
   render(<App />);
   expect(screen.getByText('Climb to Jannah')).toBeInTheDocument();
 });
 ```
 
-- [ ] **Step 2: Run the smoke test and confirm it fails before app scaffolding exists**
-
-Run:
+- [ ] **Step 2: Confirm pre-scaffold failure**
 
 ```bash
 npm test -- --run src/app/App.test.tsx
 ```
 
-Expected: failure because the React/Vitest app is not yet configured.
+Expected: command/test fails because the new app is not configured.
 
-- [ ] **Step 3: Scaffold the app and install dependencies**
-
-Use a temporary directory so the approved spec files on the branch are not overwritten:
+- [ ] **Step 3: Scaffold without overwriting approved docs**
 
 ```bash
+rm -rf /tmp/climbtojannah-vite
 npm create vite@latest /tmp/climbtojannah-vite -- --template react-ts
-cp -R /tmp/climbtojannah-vite/{package.json,index.html,src,public,tsconfig*.json,vite.config.ts,eslint.config.js} .
+cp -R /tmp/climbtojannah-vite/package.json /tmp/climbtojannah-vite/index.html /tmp/climbtojannah-vite/src /tmp/climbtojannah-vite/public /tmp/climbtojannah-vite/tsconfig*.json /tmp/climbtojannah-vite/vite.config.ts /tmp/climbtojannah-vite/eslint.config.js .
 npm install
 npm install firebase react-router-dom react-hook-form zod @hookform/resolvers i18next react-i18next date-fns adhan recharts lucide-react
 npm install -D vite-plugin-pwa vitest jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event @playwright/test firebase-tools @firebase/rules-unit-testing
 ```
 
-Add scripts to `package.json`:
+Set scripts:
 
 ```json
 {
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "typecheck": "tsc -b --pretty false",
-    "test": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore \"vitest run src/features/security/firestore.rules.test.ts\"",
-    "test:e2e": "playwright test",
-    "preview": "vite preview"
-  }
+  "dev": "vite",
+  "build": "tsc -b && vite build",
+  "lint": "eslint .",
+  "typecheck": "tsc -b --pretty false",
+  "test": "vitest",
+  "test:rules": "firebase emulators:exec --only firestore \"vitest run src/features/security/firestore.rules.test.ts\"",
+  "test:e2e": "playwright test",
+  "preview": "vite preview"
 }
 ```
 
-- [ ] **Step 4: Configure Vitest and render the minimal app**
+- [ ] **Step 4: Configure Vitest and minimal app**
+
+`src/test/setup.ts`:
+
+```ts
+import '@testing-library/jest-dom/vitest';
+```
 
 `src/app/App.tsx`:
 
@@ -162,17 +149,9 @@ export function App() {
 }
 ```
 
-`src/test/setup.ts`:
+Set Vitest `environment: 'jsdom'` and `setupFiles: './src/test/setup.ts'` in `vite.config.ts`.
 
-```ts
-import '@testing-library/jest-dom/vitest';
-```
-
-Add to `vite.config.ts` test config using `defineConfig` with `environment: 'jsdom'` and `setupFiles: './src/test/setup.ts'`.
-
-- [ ] **Step 5: Add CI**
-
-`.github/workflows/ci.yml`:
+- [ ] **Step 5: Add GitHub Actions**
 
 ```yaml
 name: ci
@@ -197,56 +176,30 @@ jobs:
       - run: npm run build
 ```
 
-- [ ] **Step 6: Verify baseline**
-
-Run:
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test -- --run && npm run build
-```
-
-Expected: all commands pass.
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add package.json package-lock.json index.html src vite.config.ts tsconfig*.json eslint.config.js .github/workflows/ci.yml
 git commit -m "build: bootstrap React TypeScript application"
 ```
 
 ---
 
-### Task 2: Build the design system, responsive shell, routing, and i18n foundation
+### Task 2: Design system, responsive shell, routing, i18n
 
-**Files:**
-- Create: `src/app/router.tsx`
-- Create: `src/app/providers/AppProviders.tsx`
-- Create: `src/app/styles/tokens.css`
-- Create: `src/app/styles/global.css`
-- Create: `src/lib/i18n.ts`
-- Create: `src/locales/en/common.json`
-- Create: `src/components/layout/AppShell.tsx`
-- Create: `src/components/layout/Sidebar.tsx`
-- Create: `src/components/layout/BottomNav.tsx`
-- Create: `src/components/layout/TopBar.tsx`
-- Create: `src/components/ui/Button.tsx`
-- Create: `src/components/ui/Card.tsx`
-- Create: `src/components/ui/StatusBanner.tsx`
-- Modify: `src/app/App.tsx`
+**Files:** Create `src/app/router.tsx`, `src/app/providers/AppProviders.tsx`, `src/app/styles/tokens.css`, `src/app/styles/global.css`, `src/lib/i18n.ts`, `src/locales/en/common.json`, layout components, and `Button`, `Card`, `StatusBanner`.
 
-**Interfaces:**
-- Produces: `AppShell`, route placeholders, `Button`, `Card`, `StatusBanner`, `t()` translation access.
+**Produces:** `AppShell`, route placeholders, shared visual tokens, and `t()` translation access.
 
-- [ ] **Step 1: Write responsive shell tests**
-
-`src/components/layout/AppShell.test.tsx`:
+- [ ] **Step 1: Write shell test**
 
 ```tsx
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppShell } from './AppShell';
 
-test('shows core navigation destinations', () => {
+test('shows core navigation', () => {
   render(<MemoryRouter><AppShell /></MemoryRouter>);
   expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /routine/i })).toBeInTheDocument();
@@ -254,17 +207,13 @@ test('shows core navigation destinations', () => {
 });
 ```
 
-- [ ] **Step 2: Run test and verify failure**
+- [ ] **Step 2: Confirm failure**
 
 ```bash
 npm test -- --run src/components/layout/AppShell.test.tsx
 ```
 
-Expected: fail because shell does not exist.
-
-- [ ] **Step 3: Create design tokens**
-
-`src/app/styles/tokens.css` must define named tokens only; components consume tokens rather than hard-coded theme colors:
+- [ ] **Step 3: Add premium tokens**
 
 ```css
 :root {
@@ -281,85 +230,45 @@ Expected: fail because shell does not exist.
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
-  --shadow-card: 0 18px 50px rgb(0 0 0 / 0.18);
+  --shadow-card: 0 18px 50px rgb(0 0 0 / .18);
   --content-max: 1180px;
 }
 ```
 
-- [ ] **Step 4: Create route shell and centralized strings**
-
-`src/locales/en/common.json` begins with:
+- [ ] **Step 4: Centralize English copy**
 
 ```json
 {
-  "brand": {
-    "name": "Climb to Jannah",
-    "tagline": "Grow with purpose. Strive with sincerity."
-  },
-  "nav": {
-    "dashboard": "Dashboard",
-    "routine": "Routine",
-    "salah": "Salah",
-    "quran": "Qur’an",
-    "selfControl": "Self-Control",
-    "journal": "Journal",
-    "progress": "Progress",
-    "settings": "Settings"
-  }
+  "brand": {"name":"Climb to Jannah","tagline":"Grow with purpose. Strive with sincerity."},
+  "nav": {"dashboard":"Dashboard","routine":"Routine","salah":"Salah","quran":"Qur’an","selfControl":"Self-Control","journal":"Journal","progress":"Progress","settings":"Settings"}
 }
 ```
 
-Create `i18n.ts` with English resources and `fallbackLng: 'en'`.
+Initialize `i18next` with `fallbackLng: 'en'`.
 
 - [ ] **Step 5: Add accessibility defaults**
 
-`global.css` must include visible `:focus-visible`, `prefers-reduced-motion`, minimum tap targets, and semantic typography rules.
+`global.css` includes `:focus-visible`, 44px minimum primary tap targets, semantic heading scale, and `@media (prefers-reduced-motion: reduce)` that disables nonessential transitions/animations.
 
-- [ ] **Step 6: Run tests and build**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 npm test -- --run src/components/layout/AppShell.test.tsx && npm run typecheck && npm run build
-```
-
-Expected: pass.
-
-- [ ] **Step 7: Commit**
-
-```bash
 git add src/app src/components src/lib/i18n.ts src/locales
-
 git commit -m "feat: add premium responsive application shell"
 ```
 
 ---
 
-### Task 3: Configure Firebase once and implement authentication
+### Task 3: Firebase initialization and authentication
 
-**Files:**
-- Create: `src/lib/firebase.ts`
-- Create: `src/features/auth/authService.ts`
-- Create: `src/features/auth/AuthProvider.tsx`
-- Create: `src/features/auth/RequireAuth.tsx`
-- Create: `src/features/auth/LoginPage.tsx`
-- Create: `src/features/auth/RegisterPage.tsx`
-- Create: `src/features/auth/ForgotPasswordPage.tsx`
-- Create: `src/features/auth/VerifyEmailPage.tsx`
-- Create: `src/features/auth/authService.test.ts`
-- Modify: `src/app/providers/AppProviders.tsx`
-- Modify: `src/app/router.tsx`
-- Create: `.env.example`
+**Files:** Create `src/lib/firebase.ts`, `src/features/auth/{authService.ts,AuthProvider.tsx,RequireAuth.tsx,LoginPage.tsx,RegisterPage.tsx,ForgotPasswordPage.tsx,VerifyEmailPage.tsx,authService.test.ts}`, `.env.example`; modify providers/router.
 
-**Interfaces:**
-- Produces: `useAuth(): { user: User | null; loading: boolean }`.
-- Produces: `signInWithGoogle()`, `signInWithEmail(email,password)`, `registerWithEmail(email,password,displayName)`, `sendPasswordReset(email)`, `logout()`.
+**Produces:** `useAuth(): { user: User | null; loading: boolean }`, `signInWithGoogle`, `signInWithEmail`, `registerWithEmail`, `sendPasswordReset`, `logout`.
 
-- [ ] **Step 1: Write auth-service contract tests with Firebase APIs mocked**
-
-Example:
+- [ ] **Step 1: Write Firebase-auth contract test with mocked modular APIs**
 
 ```ts
-import { describe, expect, test, vi } from 'vitest';
-
 vi.mock('firebase/auth', async () => ({
   GoogleAuthProvider: class {},
   signInWithPopup: vi.fn().mockResolvedValue({ user: { uid: 'u1' } }),
@@ -371,103 +280,76 @@ vi.mock('firebase/auth', async () => ({
   signOut: vi.fn(),
 }));
 
-test('Google sign-in returns the authenticated user', async () => {
+test('Google sign-in returns user', async () => {
   const { signInWithGoogle } = await import('./authService');
-  const user = await signInWithGoogle();
-  expect(user.uid).toBe('u1');
+  expect((await signInWithGoogle()).uid).toBe('u1');
 });
 ```
 
-- [ ] **Step 2: Run test to confirm failure**
+- [ ] **Step 2: Confirm failure**
 
 ```bash
 npm test -- --run src/features/auth/authService.test.ts
 ```
 
-Expected: fail because service is missing.
+- [ ] **Step 3: Initialize Firebase exactly once**
 
-- [ ] **Step 3: Centralize Firebase initialization**
+`firebase.ts` reads `VITE_FIREBASE_*`, initializes Auth and Firestore, and enables persistent local cache where supported. Do not duplicate initialization in features.
 
-`src/lib/firebase.ts` reads only `VITE_FIREBASE_*` variables, initializes `app`, `auth`, and Firestore once, and enables persistent local cache when supported. Firebase client config is not treated as a server secret; Firestore rules remain the authorization boundary.
+- [ ] **Step 4: Implement email and Google flows**
 
-- [ ] **Step 4: Implement auth service and provider**
+Email registration updates display name and sends verification. Zod validates email and minimum 8-character password; registration validates matching confirmation. Map Firebase error codes to readable field/general errors.
 
-Use Firebase modular Auth APIs. On email registration: update display name, send verification email, then return the user. Map Firebase error codes to human-readable form errors instead of showing raw codes.
-
-- [ ] **Step 5: Implement protected routing**
-
-`RequireAuth` behavior:
+- [ ] **Step 5: Add auth guard without undefined UI dependencies**
 
 ```tsx
-if (loading) return <FullPageLoader />;
+if (loading) {
+  return <main aria-busy="true"><p role="status">Loading account…</p></main>;
+}
 if (!user) return <Navigate to="/login" replace />;
 return <Outlet />;
 ```
 
-- [ ] **Step 6: Add accessible forms**
-
-Use `react-hook-form` + `zod`; email schema uses `z.string().email()`, password minimum is 8 characters, and registration confirms password equality.
-
-- [ ] **Step 7: Verify**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 npm test -- --run src/features/auth && npm run typecheck && npm run build
-```
-
-Expected: pass.
-
-- [ ] **Step 8: Commit**
-
-```bash
 git add src/lib/firebase.ts src/features/auth src/app .env.example
-git commit -m "feat: add secure Firebase authentication flows"
+git commit -m "feat: add Firebase authentication flows"
 ```
 
 ---
 
-### Task 4: Define Firestore domain model and UID-scoped security rules
+### Task 4: Firestore schema and UID-scoped security
 
-**Files:**
-- Create: `src/features/data/schema.ts`
-- Create: `src/features/data/paths.ts`
-- Create: `firestore.rules`
-- Create: `firestore.indexes.json`
-- Create: `firebase.json`
-- Create: `src/features/security/firestore.rules.test.ts`
-- Create: `src/test/firebaseEmulator.ts`
+**Files:** Create `src/features/data/{schema.ts,paths.ts}`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `src/features/security/firestore.rules.test.ts`, `src/test/firebaseEmulator.ts`.
 
-**Interfaces:**
-- Produces path helpers such as `userDoc(uid)`, `routineCollection(uid)`, `dailyCompletionDoc(uid,dateKey)`, `journalCollection(uid)`.
-- Produces domain types: `UserProfile`, `RoutineGoal`, `DailyCompletion`, `PrayerDay`, `QuranEntry`, `SelfControlHabit`, `SelfControlEvent`, `JournalEntry`, `WeeklyReflection`, `ReminderSettings`.
+**Produces:** domain types and UID-based path helpers.
 
-- [ ] **Step 1: Define explicit schema types**
-
-Key shape examples:
+- [ ] **Step 1: Define core types**
 
 ```ts
 export type GoalCategory = 'deen' | 'dunya';
-
 export interface RoutineGoal {
   id: string;
   title: string;
   category: GoalCategory;
   enabled: boolean;
   order: number;
-  scheduleDays: number[]; // 0 Sunday ... 6 Saturday
+  scheduleDays: number[];
   createdAt: string;
   updatedAt: string;
 }
-
 export interface DailyCompletion {
-  dateKey: string; // yyyy-MM-dd in user's selected timezone
+  dateKey: string;
   completedGoalIds: string[];
   updatedAt: string;
 }
 ```
 
-- [ ] **Step 2: Write security-rule tests first**
+Also define `UserProfile`, `PrayerDay`, `QuranEntry`, `SelfControlHabit`, `SelfControlEvent`, `JournalEntry`, `WeeklyReflection`, `ReminderSettings`.
 
-Tests must prove:
+- [ ] **Step 2: Write rules tests first**
 
 ```ts
 await assertSucceeds(setDoc(doc(ownerDb, 'users/u1/routines/r1'), validRoutine));
@@ -475,309 +357,210 @@ await assertFails(getDoc(doc(otherDb, 'users/u1/routines/r1')));
 await assertFails(setDoc(doc(otherDb, 'users/u1/routines/r2'), validRoutine));
 ```
 
-Unauthenticated reads/writes also fail.
+Also assert unauthenticated read/write failure.
 
-- [ ] **Step 3: Run rules tests and confirm failure**
+- [ ] **Step 3: Confirm rules tests fail before rules implementation**
 
 ```bash
 npm run test:rules
 ```
 
-Expected: fail before rules are implemented.
-
-- [ ] **Step 4: Implement UID-scoped rules**
-
-Base rule pattern:
+- [ ] **Step 4: Implement ownership rules**
 
 ```text
 match /users/{userId} {
   allow read, write: if request.auth != null && request.auth.uid == userId;
-
   match /{document=**} {
     allow read, write: if request.auth != null && request.auth.uid == userId;
   }
 }
 ```
 
-Add field/type validation for high-risk settings and routine writes rather than relying only on ownership.
+Add field/type validation for routine/settings writes.
 
-- [ ] **Step 5: Verify rule isolation**
+- [ ] **Step 5: Verify and commit**
 
 ```bash
 npm run test:rules
-```
-
-Expected: all ownership/unauthenticated tests pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
 git add firestore.rules firestore.indexes.json firebase.json src/features/data src/features/security src/test/firebaseEmulator.ts
-git commit -m "feat: add private Firestore schema and security rules"
+git commit -m "feat: add private Firestore schema and rules"
 ```
 
 ---
 
-### Task 5: Implement Daily Routine and transparent Consistency Score
+### Task 5: Daily Routine and transparent Consistency Score
 
-**Files:**
-- Create: `src/features/routines/routineRepository.ts`
-- Create: `src/features/routines/routineService.ts`
-- Create: `src/features/routines/useRoutines.ts`
-- Create: `src/features/routines/RoutinePage.tsx`
-- Create: `src/features/routines/GoalEditor.tsx`
-- Create: `src/features/routines/consistency.ts`
-- Create: `src/features/routines/consistency.test.ts`
-- Create: `src/features/routines/defaultGoals.ts`
+**Files:** Create `src/features/routines/{routineRepository.ts,routineService.ts,useRoutines.ts,RoutinePage.tsx,GoalEditor.tsx,consistency.ts,consistency.test.ts,defaultGoals.ts}` and `src/lib/dates.ts`.
 
-**Interfaces:**
-- Produces: `calculateDailyConsistency(scheduledGoalIds: string[], completedGoalIds: string[]): number` returning integer 0–100.
-- Produces: `calculateRollingConsistency(days: {scheduled:number;completed:number}[]): number`.
-- Produces CRUD repository for goals and date-keyed completion records.
+**Produces:** `calculateDailyConsistency(scheduledGoalIds, completedGoalIds): number`, date-key utilities, routine CRUD/completion APIs.
 
-- [ ] **Step 1: Write scoring tests**
+- [ ] **Step 1: Test score semantics**
 
 ```ts
-import { expect, test } from 'vitest';
-import { calculateDailyConsistency } from './consistency';
-
-test('returns transparent completion percentage', () => {
+test('uses completion percentage only', () => {
   expect(calculateDailyConsistency(['a','b','c','d'], ['a','c','d'])).toBe(75);
 });
 
-test('returns zero when no scheduled goals exist', () => {
+test('zero scheduled goals returns zero', () => {
   expect(calculateDailyConsistency([], [])).toBe(0);
 });
 ```
 
-- [ ] **Step 2: Run test and verify failure**
-
-```bash
-npm test -- --run src/features/routines/consistency.test.ts
-```
-
-- [ ] **Step 3: Implement scoring without arbitrary spiritual values**
+- [ ] **Step 2: Confirm failure, then implement**
 
 ```ts
 export function calculateDailyConsistency(scheduled: string[], completed: string[]) {
   if (scheduled.length === 0) return 0;
   const completedSet = new Set(completed);
-  const count = scheduled.filter(id => completedSet.has(id)).length;
-  return Math.round((count / scheduled.length) * 100);
+  return Math.round((scheduled.filter(id => completedSet.has(id)).length / scheduled.length) * 100);
 }
 ```
 
-- [ ] **Step 4: Seed editable Islamic defaults**
+- [ ] **Step 3: Add editable defaults**
 
-Defaults should be routine labels only, not claims about reward values. Initial set: five daily prayers as routine-linked defaults, Qur’an reading, morning/evening adhkar, and one reflection item. Users can hide, reorder, rename, delete, or add deen/dunya items.
+Default routine labels: Fajr, Dhuhr, Asr, Maghrib, Isha, Qur’an reading, morning/evening adhkar, reflection. They have no reward-point values and can be hidden, renamed, reordered, or removed.
 
-- [ ] **Step 5: Implement Firestore repository and optimistic/offline-safe UI**
+- [ ] **Step 4: Implement CRUD and date-keyed completion records**
 
-Completion toggles write the date document with `setDoc(..., { merge: true })`; UI shows a small pending-sync state when `navigator.onLine === false`.
+Use `setDoc(..., { merge: true })`; no interval polling. Show pending-sync text when offline.
 
-- [ ] **Step 6: Add CRUD interaction tests**
+- [ ] **Step 5: Test add/edit/reorder/hide/delete/completion**
 
-Use mocked repository methods to verify add/edit/reorder/hide/delete and completion toggles.
+Mock repository functions and verify only the intended goal/completion changes.
 
-- [ ] **Step 7: Verify**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 npm test -- --run src/features/routines && npm run typecheck
-```
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add src/features/routines
-git commit -m "feat: add customizable routine and consistency tracking"
+git add src/features/routines src/lib/dates.ts
+git commit -m "feat: add customizable routine tracking"
 ```
 
 ---
 
-### Task 6: Implement Salah tracking and prayer-time configuration
+### Task 6: Salah and prayer-time configuration
 
-**Files:**
-- Create: `src/features/salah/salahTypes.ts`
-- Create: `src/features/salah/prayerTimes.ts`
-- Create: `src/features/salah/prayerTimes.test.ts`
-- Create: `src/features/salah/salahRepository.ts`
-- Create: `src/features/salah/SalahPage.tsx`
-- Create: `src/features/salah/PrayerSetup.tsx`
+**Files:** Create `src/features/salah/{salahTypes.ts,prayerTimes.ts,prayerTimes.test.ts,salahRepository.ts,SalahPage.tsx,PrayerSetup.tsx}`.
 
-**Interfaces:**
-- Produces: `getPrayerTimes(input: PrayerCalculationInput): PrayerTimesResult`.
-- Consumes: user-selected latitude/longitude, calculation method, madhab, timezone/date.
-- Produces manual completion state for `fajr | dhuhr | asr | maghrib | isha`.
+**Produces:** `getPrayerTimes(input)`, manual completion for `fajr | dhuhr | asr | maghrib | isha`.
 
-- [ ] **Step 1: Write calculation mapping tests**
+- [ ] **Step 1: Test prayer-time adapter output**
 
-Test that a configured date/location returns all five required prayer keys and times sorted chronologically.
+Assert configured input returns all five prayer names and chronologically sorted times.
 
-- [ ] **Step 2: Run and verify failure**
+- [ ] **Step 2: Isolate `adhan` behind `prayerTimes.ts`**
 
-```bash
-npm test -- --run src/features/salah/prayerTimes.test.ts
-```
+Support explicit calculation-method and Asr-madhab selection. UI never calls `adhan` directly.
 
-- [ ] **Step 3: Implement `adhan` adapter**
+- [ ] **Step 3: Implement privacy-respecting location setup**
 
-Keep `adhan` usage isolated in `prayerTimes.ts`; UI code must not call the library directly. Support explicit calculation method selection and Asr madhab selection. Do not infer prayer completion from time passage.
+Offer explicit device-location permission or manual latitude/longitude. Manual salah completion works even without configured location.
 
-- [ ] **Step 4: Implement setup UX**
+- [ ] **Step 4: Store one `PrayerDay` per date**
 
-Offer two location paths:
+Time passage never auto-completes a prayer.
 
-```text
-Use device location (explicit browser permission)
-Enter coordinates manually
-```
-
-Do not require device geolocation to use manual salah tracking.
-
-- [ ] **Step 5: Implement manual completion storage**
-
-Use one `PrayerDay` document per date key with boolean fields for the five prayers and `updatedAt`.
-
-- [ ] **Step 6: Add UI tests**
-
-Verify marking Fajr complete changes only Fajr and that time passage itself does not mark any prayer complete.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Test manual completion and commit**
 
 ```bash
+npm test -- --run src/features/salah && npm run typecheck
 git add src/features/salah
 git commit -m "feat: add prayer times and manual salah tracking"
 ```
 
 ---
 
-### Task 7: Implement Qur’an activity tracking
+### Task 7: Qur’an activity tracking
 
-**Files:**
-- Create: `src/features/quran/quranTypes.ts`
-- Create: `src/features/quran/quranRepository.ts`
-- Create: `src/features/quran/QuranPage.tsx`
-- Create: `src/features/quran/QuranEntryForm.tsx`
-- Create: `src/features/quran/quranSummary.ts`
-- Create: `src/features/quran/quranSummary.test.ts`
+**Files:** Create `src/features/quran/{quranTypes.ts,quranRepository.ts,QuranPage.tsx,QuranEntryForm.tsx,quranSummary.ts,quranSummary.test.ts}`.
 
-**Interfaces:**
-- Supports activity kinds: `reading | memorization | revision | tafsir`.
-- Quantities: optional `pages`, `ayah`, `minutes`; users may record only the fields relevant to the activity.
-- Produces `summarizeQuranDay(entries): { sessions, pages, ayah, minutes, kinds }`.
+**Produces:** activity kinds `reading | memorization | revision | tafsir`; optional pages/ayah/minutes metrics.
 
-- [ ] **Step 1: Write summary tests**
+- [ ] **Step 1: Write summary test**
 
 ```ts
-test('sums mixed Qur’an activity without double counting', () => {
-  const summary = summarizeQuranDay([
+test('summarizes mixed activity', () => {
+  const value = summarizeQuranDay([
     { kind: 'reading', pages: 4, minutes: 12 },
     { kind: 'revision', ayah: 8, minutes: 10 },
   ]);
-  expect(summary).toMatchObject({ sessions: 2, pages: 4, ayah: 8, minutes: 22 });
+  expect(value).toMatchObject({ sessions: 2, pages: 4, ayah: 8, minutes: 22 });
 });
 ```
 
-- [ ] **Step 2: Run test and verify failure**
+- [ ] **Step 2: Implement pure summary + validated persistence**
 
-- [ ] **Step 3: Implement repository + validated form**
+Reject negative quantities and submissions with no metric and no note.
 
-Require at least one positive quantity or a short note; reject negative quantities and blank no-op submissions.
+- [ ] **Step 3: Build simple today surface plus detailed history**
 
-- [ ] **Step 4: Implement simple surface + detailed history**
+Quick-add first; history shows activity kind and metrics.
 
-Default page shows today’s total and quick-add; history expands into activity type and metrics.
-
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 4: Verify and commit**
 
 ```bash
 npm test -- --run src/features/quran && npm run typecheck
 git add src/features/quran
-git commit -m "feat: add Qur’an reading and study tracking"
+git commit -m "feat: add Quran activity tracking"
 ```
 
 ---
 
-### Task 8: Implement Self-Control tracking without shame scoring
+### Task 8: Self-Control tracking and recovery
 
-**Files:**
-- Create: `src/features/selfControl/selfControlTypes.ts`
-- Create: `src/features/selfControl/selfControlRepository.ts`
-- Create: `src/features/selfControl/recovery.ts`
-- Create: `src/features/selfControl/recovery.test.ts`
-- Create: `src/features/selfControl/SelfControlPage.tsx`
-- Create: `src/features/selfControl/SlipDialog.tsx`
+**Files:** Create `src/features/selfControl/{selfControlTypes.ts,selfControlRepository.ts,recovery.ts,recovery.test.ts,SelfControlPage.tsx,SlipDialog.tsx}`.
 
-**Interfaces:**
-- Habit has `startedAt`, optional `lastSlipAt`, `enabled`, `title`.
-- Event type is `slip | recovery_note`.
-- Produces `cleanDaysSince(startedAt,lastSlipAt,now): number`.
+**Produces:** `cleanDaysSince(startedAt,lastSlipAt,now): number`; events `slip | recovery_note`.
 
-- [ ] **Step 1: Write recovery math tests**
+- [ ] **Step 1: Test calendar-day streak logic**
 
 ```ts
-test('clean streak restarts after the latest slip', () => {
+test('streak restarts after latest slip', () => {
   expect(cleanDaysSince('2026-09-01', '2026-09-08', new Date('2026-09-11T12:00:00Z'))).toBe(3);
 });
 ```
 
-- [ ] **Step 2: Run and verify failure**
+- [ ] **Step 2: Implement using date utilities, not raw millisecond division**
 
-- [ ] **Step 3: Implement clean-streak calculation using calendar-day boundaries**
+Timezone/day-boundary behavior must remain stable across DST changes.
 
-Use date utilities rather than raw millisecond division so DST/timezone changes do not create off-by-one results.
+- [ ] **Step 3: Implement neutral slip/recovery UX**
 
-- [ ] **Step 4: Implement slip recording UX**
+Use copy such as `Recorded. Start again from here.` Never use “sin points”, “failure score”, or punitive values.
 
-Copy rules: neutral language such as “Recorded. Start again from here.” Never display “sin points”, “failure score”, or punitive numerical values.
+- [ ] **Step 4: Add optional private recovery note and event trend**
 
-- [ ] **Step 5: Add recovery note flow and trend history**
-
-Recovery note is optional and private; chart uses event dates only.
-
-- [ ] **Step 6: Verify and commit**
+- [ ] **Step 5: Verify and commit**
 
 ```bash
 npm test -- --run src/features/selfControl && npm run typecheck
 git add src/features/selfControl
-git commit -m "feat: add private self-control and recovery tracking"
+git commit -m "feat: add self-control recovery tracking"
 ```
 
 ---
 
-### Task 9: Implement private journal and weekly reflection
+### Task 9: Private journal and weekly reflection
 
-**Files:**
-- Create: `src/features/journal/journalRepository.ts`
-- Create: `src/features/journal/JournalPage.tsx`
-- Create: `src/features/journal/JournalEditor.tsx`
-- Create: `src/features/journal/WeeklyReflection.tsx`
-- Create: `src/features/journal/prompts.ts`
-- Create: `src/features/journal/JournalPage.test.tsx`
+**Files:** Create `src/features/journal/{journalRepository.ts,JournalPage.tsx,JournalEditor.tsx,JournalPreview.tsx,WeeklyReflection.tsx,prompts.ts,JournalPage.test.tsx}`.
 
-**Interfaces:**
-- Journal entry: `{ id, dateKey, title, body, promptId?, createdAt, updatedAt }`.
-- Weekly reflection: `{ weekKey, wins, struggle, nextFocus, gratitude, updatedAt }`.
+**Produces:** private text journal and one reflection document per ISO week.
 
-- [ ] **Step 1: Write journal rendering safety test**
+- [ ] **Step 1: Test safe text rendering**
 
 ```tsx
-test('renders journal text as text, not executable HTML', async () => {
+test('does not execute journal HTML', () => {
   render(<JournalPreview body={'<img src=x onerror="alert(1)">'} />);
   expect(screen.getByText('<img src=x onerror="alert(1)">')).toBeInTheDocument();
   expect(document.querySelector('img')).toBeNull();
 });
 ```
 
-- [ ] **Step 2: Run and verify failure**
+- [ ] **Step 2: Implement normal React text rendering only**
 
-- [ ] **Step 3: Implement text-only safe rendering and repository**
+Do not use `dangerouslySetInnerHTML`.
 
-Do not use `dangerouslySetInnerHTML`. Store raw user text and render via normal React text nodes.
-
-- [ ] **Step 4: Add guided prompts**
-
-Initial prompts:
+- [ ] **Step 3: Add guided prompts**
 
 ```ts
 [
@@ -787,49 +570,31 @@ Initial prompts:
 ]
 ```
 
-- [ ] **Step 5: Implement weekly reflection form**
+- [ ] **Step 4: Add weekly fields**
 
-Use four explicit fields (`wins`, `struggle`, `nextFocus`, `gratitude`) and one document per ISO week key.
+`wins`, `struggle`, `nextFocus`, `gratitude`.
 
-- [ ] **Step 6: Verify and commit**
+- [ ] **Step 5: Verify and commit**
 
 ```bash
 npm test -- --run src/features/journal && npm run typecheck
 git add src/features/journal
-git commit -m "feat: add private journal and weekly reflections"
+git commit -m "feat: add private journal and reflections"
 ```
 
 ---
 
-### Task 10: Build Dashboard and Progress analytics
+### Task 10: Dashboard and Progress analytics
 
-**Files:**
-- Create: `src/features/dashboard/DashboardPage.tsx`
-- Create: `src/features/dashboard/useDashboardSummary.ts`
-- Create: `src/features/dashboard/MotivationCard.tsx`
-- Create: `src/features/progress/ProgressPage.tsx`
-- Create: `src/features/progress/analytics.ts`
-- Create: `src/features/progress/analytics.test.ts`
-- Create: `src/features/progress/ConsistencyChart.tsx`
-- Create: `src/features/progress/InsightList.tsx`
+**Files:** Create `src/features/dashboard/{DashboardPage.tsx,useDashboardSummary.ts,MotivationCard.tsx}` and `src/features/progress/{ProgressPage.tsx,analytics.ts,analytics.test.ts,ConsistencyChart.tsx,InsightList.tsx}`.
 
-**Interfaces:**
-- Dashboard summary combines already-owned feature repositories; it does not duplicate Firestore storage.
-- Produces insights from factual trends only, e.g. “You completed more scheduled goals this week than last week.”
+**Produces:** balanced today summary, weekly/monthly charts, factual trend insights.
 
-- [ ] **Step 1: Write analytics tests**
+- [ ] **Step 1: Test weekly/rolling analytics and zero-data cases**
 
-Test weekly completion percentage, seven-day rolling score, and week-over-week trend direction with zero-data cases.
+Analytics functions are pure and receive daily aggregates rather than querying Firestore themselves.
 
-- [ ] **Step 2: Run and verify failure**
-
-- [ ] **Step 3: Implement pure analytics functions**
-
-Pure functions accept arrays of daily aggregates and return numbers/labels; no Firestore calls inside analytics helpers.
-
-- [ ] **Step 4: Build balanced dashboard**
-
-Dashboard order on mobile:
+- [ ] **Step 2: Build mobile dashboard order**
 
 ```text
 Greeting + date
@@ -841,67 +606,48 @@ Reflection/motivation
 Quick actions
 ```
 
-Avoid displaying all historical charts on the dashboard.
+- [ ] **Step 3: Build accessible Progress charts**
 
-- [ ] **Step 5: Build Progress page**
+Use `recharts`; every chart includes a textual summary so color/graphics are not the only information channel.
 
-Use `recharts` for weekly/monthly visualizations with accessible text summaries below charts. Charts must not be the only way information is conveyed.
+- [ ] **Step 4: Curate motivation safely**
 
-- [ ] **Step 6: Add motivation content safely**
+Do not reuse legacy reward-point copy. Store a small static set of clearly sourced references plus original reflection copy; never present generated prose as Qur’an/Hadith text.
 
-Do not reuse legacy “reward point” messaging. Use a small curated static set with source references and original reflection text; do not present generated text as Qur’an or Hadith.
-
-- [ ] **Step 7: Verify and commit**
+- [ ] **Step 5: Verify and commit**
 
 ```bash
 npm test -- --run src/features/dashboard src/features/progress && npm run build
 git add src/features/dashboard src/features/progress
-git commit -m "feat: add balanced dashboard and progress insights"
+git commit -m "feat: add dashboard and progress insights"
 ```
 
 ---
 
-### Task 11: Implement settings, reminder preferences, network state, and PWA
+### Task 11: Settings, reminders, offline/PWA state
 
-**Files:**
-- Create: `src/features/settings/settingsRepository.ts`
-- Create: `src/features/settings/SettingsPage.tsx`
-- Create: `src/features/settings/ReminderSettings.tsx`
-- Create: `src/lib/network.ts`
-- Create: `src/components/ui/StatusBanner.tsx`
-- Modify: `vite.config.ts`
-- Create: `public/icons/icon-192.png`
-- Create: `public/icons/icon-512.png`
-- Create: `src/features/settings/reminders.ts`
-- Create: `src/features/settings/reminders.test.ts`
+**Files:** Create `src/features/settings/{settingsRepository.ts,SettingsPage.tsx,ReminderSettings.tsx,reminders.ts,reminders.test.ts}`, `src/lib/network.ts`, `public/icons/icon-192.png`, `public/icons/icon-512.png`; modify `vite.config.ts` and `StatusBanner.tsx`.
 
-**Interfaces:**
-- Reminder settings store enabled reminder types and quiet-hours start/end.
-- Browser notifications are capability-checked; unsupported platforms receive in-app reminders only.
-- PWA uses generated service worker; Firestore handles queued data writes.
+**Produces:** reminder preferences, quiet hours, in-app reminder engine, capability-gated browser notifications, installable PWA.
 
-- [ ] **Step 1: Write quiet-hours tests**
+- [ ] **Step 1: Test quiet hours crossing midnight**
 
 ```ts
-test('handles quiet hours crossing midnight', () => {
+test('quiet hours can cross midnight', () => {
   expect(isWithinQuietHours('23:30', { start: '22:00', end: '06:00' })).toBe(true);
   expect(isWithinQuietHours('12:00', { start: '22:00', end: '06:00' })).toBe(false);
 });
 ```
 
-- [ ] **Step 2: Run and verify failure**
+- [ ] **Step 2: Implement reminder decision logic**
 
-- [ ] **Step 3: Implement reminder decision logic**
+A reminder is eligible only when enabled, outside quiet hours, an item is due, and that due-window reminder has not already been shown. Schedule the next in-app reminder with a single timeout calculated from the next due event; do not poll Firestore on an interval.
 
-Reminder eligibility must check: reminder enabled, not inside quiet hours, app has relevant due item, and same reminder has not already been shown for that due window.
+- [ ] **Step 3: Browser notification capability rules**
 
-- [ ] **Step 4: Implement notification capability behavior**
+Request permission only after the user explicitly enables browser notifications. If unsupported/denied, continue with in-app reminders. V1 does not promise notification delivery while the browser/PWA is fully suspended because there is no paid server-side push scheduler in this scope.
 
-If `Notification` is unavailable or permission is denied, show in-app reminders only. Never claim background delivery is guaranteed. Request notification permission only after a user explicitly enables browser notifications in Settings.
-
-- [ ] **Step 5: Configure PWA**
-
-`vite-plugin-pwa` config must include:
+- [ ] **Step 4: Configure PWA**
 
 ```ts
 VitePWA({
@@ -921,94 +667,63 @@ VitePWA({
 })
 ```
 
-Use real generated project icons before commit; do not commit missing icon references.
+Generate and commit valid 192×192 and 512×512 brand icons before referencing them.
 
-- [ ] **Step 6: Implement network/sync banner**
+- [ ] **Step 5: Implement network/sync banner**
 
-Network state listens to browser `online/offline` events. UI wording distinguishes `Offline — changes will sync when connection returns` from hard errors.
+Use browser `online/offline` events. Copy: `Offline — changes will sync when connection returns.` Distinguish this from hard sync errors.
 
-- [ ] **Step 7: Verify and commit**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 npm test -- --run src/features/settings && npm run build
 git add src/features/settings src/lib/network.ts src/components/ui/StatusBanner.tsx vite.config.ts public/icons
-git commit -m "feat: add PWA offline states and smart reminder preferences"
+git commit -m "feat: add PWA and reminder preferences"
 ```
 
 ---
 
-### Task 12: Finish Settings, Help, error states, accessibility, and performance
+### Task 12: Support, error states, accessibility, performance
 
-**Files:**
-- Create: `src/features/support/SupportPage.tsx`
-- Create: `src/components/ui/EmptyState.tsx`
-- Create: `src/components/ui/Field.tsx`
-- Create: `src/app/RouteErrorBoundary.tsx`
-- Modify: all feature routes for loading/empty/error states
-- Create: `src/app/accessibility.test.tsx`
+**Files:** Create `src/features/support/SupportPage.tsx`, `src/components/ui/{EmptyState.tsx,Field.tsx}`, `src/app/RouteErrorBoundary.tsx`, `src/app/accessibility.test.tsx`; modify feature routes.
 
-**Interfaces:**
-- Every primary route has explicit loading, empty, network failure, and permission error presentation.
-- Support page contains real product guidance; no placeholder “Start Chat” buttons.
+**Produces:** explicit loading/empty/offline/error states and real help content.
 
-- [ ] **Step 1: Write navigation/accessibility tests**
+- [ ] **Step 1: Test labels, focusable controls, and route-error recovery action**
 
-Test that primary controls have accessible names, forms connect labels to inputs, keyboard focus remains visible, and route errors show a recovery action.
+Use RTL queries by role/label rather than class names.
 
-- [ ] **Step 2: Run and verify failure**
+- [ ] **Step 2: Add lazy loading**
 
-- [ ] **Step 3: Add route-level lazy loading**
+Use `React.lazy` for `progress`, `journal`, `settings`, and `support` routes with a consistent accessible fallback.
 
-Use `React.lazy` for noncritical routes (`progress`, `journal`, `settings`, `support`) and a consistent route fallback.
+- [ ] **Step 3: Replace placeholder Help actions**
 
-- [ ] **Step 4: Implement Help & Support content**
+Support sections: account access, privacy, offline/sync behavior, consistency-score meaning, salah tracking, notifications. Use the public repository GitHub Issues page as the concrete bug-report/support link; label it clearly as public so users do not post private journal/account data.
 
-Include sections for account access, offline behavior, consistency-score meaning, privacy, salah tracking, and notification limitations. Provide a GitHub issue link only if it is intended as public support; otherwise provide a simple support contact text configured centrally.
-
-- [ ] **Step 5: Run quality checks**
+- [ ] **Step 4: Verify quality gates and commit**
 
 ```bash
 npm run lint && npm run typecheck && npm test -- --run && npm run build
-```
-
-Expected: pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
 git add src
-git commit -m "feat: harden UX accessibility and error handling"
+git commit -m "feat: harden accessibility and error handling"
 ```
 
 ---
 
-### Task 13: Add end-to-end tests, Firebase Hosting, and legacy cutover
+### Task 13: E2E, Firebase Hosting, legacy cutover
 
-**Files:**
-- Create: `playwright.config.ts`
-- Create: `e2e/auth.spec.ts`
-- Create: `e2e/core-flow.spec.ts`
-- Modify: `firebase.json`
-- Modify: `.github/workflows/ci.yml`
-- Delete after parity verification: `Deed-journal.html`
-- Delete after parity verification: `Help-&-Support.html`
-- Delete after parity verification: `daily-goals.html`
-- Delete after parity verification: `progress-tracking.html`
-- Delete after parity verification: legacy `motivation.json` if curated content no longer depends on it
-- Delete: legacy `CNAME` during Firebase Hosting cutover
-- Replace: legacy root `index.html` with Vite entry already created in Task 1
-- Update: `README.md`
+**Files:** Create `playwright.config.ts`, `e2e/auth.spec.ts`, `e2e/core-flow.spec.ts`; modify `firebase.json`, `.github/workflows/ci.yml`, `README.md`; delete legacy HTML, obsolete `motivation.json`, and legacy `CNAME` after parity verification.
 
-**Interfaces:**
-- Produces production SPA routing and documented deployment commands.
+**Produces:** production SPA routing and verified replacement of legacy pages.
 
-- [ ] **Step 1: Write core E2E tests**
+- [ ] **Step 1: Add E2E core flow**
 
-`e2e/core-flow.spec.ts` should cover a test/emulator account:
+Test emulator-backed login and this sequence: create a custom routine goal → complete it → manually mark a salah → add Qur’an activity → record self-control slip → save journal entry → open Progress.
+
+Example interaction:
 
 ```ts
-await page.goto('/login');
-// authenticate against emulator helper
 await page.getByRole('link', { name: /routine/i }).click();
 await page.getByRole('button', { name: /add goal/i }).click();
 await page.getByLabel(/goal title/i).fill('Study 45 minutes');
@@ -1016,11 +731,7 @@ await page.getByRole('button', { name: /save/i }).click();
 await expect(page.getByText('Study 45 minutes')).toBeVisible();
 ```
 
-Also cover manual salah completion, Qur’an entry, self-control slip recording, and journal save.
-
-- [ ] **Step 2: Configure SPA hosting**
-
-`firebase.json` hosting section:
+- [ ] **Step 2: Configure Firebase Hosting SPA fallback**
 
 ```json
 {
@@ -1032,9 +743,9 @@ Also cover manual salah completion, Qur’an entry, self-control slip recording,
 }
 ```
 
-Keep Firestore emulator/rules configuration in the same file.
+Keep Firestore rules/emulator config in the same `firebase.json`.
 
-- [ ] **Step 3: Run complete local verification**
+- [ ] **Step 3: Run full suite before deletion**
 
 ```bash
 npm run lint
@@ -1045,37 +756,26 @@ npm run build
 npm run test:e2e
 ```
 
-Expected: all pass.
-
-- [ ] **Step 4: Verify production build manually**
-
-Run:
+- [ ] **Step 4: Manual production-build verification**
 
 ```bash
 npm run build && npm run preview -- --host 0.0.0.0
 ```
 
-Check common mobile, tablet, and desktop widths; login/logout; offline reload after first load; queued write reconciliation after reconnect; keyboard navigation; reduced-motion preference.
+Check mobile/tablet/desktop, login/logout, first-load then offline reload, offline queued write then reconnect, keyboard navigation, and reduced-motion.
 
-- [ ] **Step 5: Remove legacy files only after parity checks pass**
+- [ ] **Step 5: Remove legacy delivery files only after parity passes**
 
-Delete legacy HTML/CNAME files on `upgrade/react-rebuild`; do not alter `main` yet.
+Delete `Deed-journal.html`, `Help-&-Support.html`, `daily-goals.html`, `progress-tracking.html`, old `motivation.json` when no longer referenced, and `CNAME`. Keep the new Vite `index.html`.
 
-- [ ] **Step 6: Update README**
+- [ ] **Step 6: Document setup/deployment**
 
-Document local setup, required `VITE_FIREBASE_*` variables, Firebase emulator commands, CI commands, build, and Firebase Hosting deployment.
+README covers `VITE_FIREBASE_*`, Firebase emulator, tests, build, Firebase Hosting deployment, and the intentional clean-reset/no-migration policy.
 
-- [ ] **Step 7: Final verification after deletions**
-
-```bash
-npm ci && npm run lint && npm run typecheck && npm test -- --run && npm run test:rules && npm run build
-```
-
-Expected: pass from clean install.
-
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Verify clean install and commit**
 
 ```bash
+npm ci && npm run lint && npm run typecheck && npm test -- --run && npm run test:rules && npm run build && npm run test:e2e
 git add -A
 git commit -m "feat: complete Climb to Jannah React PWA rebuild"
 ```
@@ -1084,30 +784,28 @@ git commit -m "feat: complete Climb to Jannah React PWA rebuild"
 
 ### Task 14: Final branch review and merge readiness
 
-**Files:**
-- Review only; fixes go to the relevant feature files.
+**Files:** Review only; any fixes go to their owning feature files.
 
-**Interfaces:**
-- Produces a branch that is safe to open as a PR against `main`.
+**Produces:** PR-ready `upgrade/react-rebuild` branch.
 
-- [ ] **Step 1: Compare branch against main**
+- [ ] **Step 1: Review diff**
 
 ```bash
 git diff --stat main...upgrade/react-rebuild
 git diff main...upgrade/react-rebuild -- firestore.rules firebase.json package.json
 ```
 
-Confirm no accidental secrets, no unrelated files, and no surviving legacy spiritual-score language.
+Check for accidental secrets, unrelated files, and obsolete spiritual-scoring semantics.
 
-- [ ] **Step 2: Search prohibited legacy wording**
+- [ ] **Step 2: Search prohibited legacy copy**
 
 ```bash
 grep -RniE "distance to jannah|sin points|bad deed points|earn \+[0-9]+ points" src public README.md || true
 ```
 
-Expected: no product copy that presents religious reward/punishment as a numerical metric.
+Expected: no religious reward/punishment represented as numerical scoring.
 
-- [ ] **Step 3: Run final full suite**
+- [ ] **Step 3: Run final suite**
 
 ```bash
 npm ci
@@ -1121,16 +819,21 @@ npm run test:e2e
 
 Expected: all pass.
 
-- [ ] **Step 4: Create pull request**
+- [ ] **Step 4: Create PR**
 
-PR title:
+Title: `Rebuild Climb to Jannah as premium React PWA`
 
-```text
-Rebuild Climb to Jannah as premium React PWA
-```
+Body summarizes product changes, privacy/security model, tests, deployment notes, and states that legacy user tracking data is intentionally not migrated.
 
-PR body must summarize product changes, security model, test results, deployment/cutover notes, and state clearly that legacy user tracking data is intentionally not migrated.
+- [ ] **Step 5: Merge only after successful CI/review**
 
-- [ ] **Step 5: Merge only after review**
+Never force-push `main`; deploy the verified `main` build to Firebase Hosting after merge.
 
-Do not force-push `main`. Merge after code review and successful CI; then deploy the verified `main` build to Firebase Hosting.
+---
+
+## Self-Review Result
+
+- Spec coverage: auth, routines, salah, Qur’an, self-control, journal, dashboard, progress, settings, reminders, PWA/offline, privacy/security, accessibility, support, CI, deployment, and legacy cutover each have an implementation task.
+- Placeholder scan: no `TBD`, `TODO`, or unspecified implementation placeholders remain.
+- Interface consistency: auth loading UI no longer references an undefined component; date utilities are explicitly created; journal preview is explicitly created; data/security directories are represented in the file map.
+- Scope: social/community features remain future-ready but intentionally outside v1.
